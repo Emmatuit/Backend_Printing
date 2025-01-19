@@ -1,0 +1,18 @@
+{"properties": [
+  {
+    "name": "imagekit.publicKey",
+    "type": "java.lang.String",
+    "description": "A description for 'imagekit.publicKey'"
+  },
+  {
+    "name": "imagekit.urlEndpoint",
+    "type": "java.lang.String",
+    "description": "A description for 'imagekit.urlEndpoint'"
+  },
+  {
+    "name": "imagekit.privateKey",
+    "type": "java.lang.String",
+    "description": "A description for 'imagekit.privateKey'"
+  }
+				]
+}

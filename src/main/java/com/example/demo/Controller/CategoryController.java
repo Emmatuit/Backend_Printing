@@ -37,29 +37,29 @@ public class CategoryController {
 		this.subcategoryService = subcategoryService;
 	}
 
-	// Method to add a new category http://localhost:8080/api/add
-	@PostMapping(value = "/add", consumes = { "multipart/form-data" })
-	public ResponseEntity<CategoryDto> addCategory(@RequestParam("name") String name,
-			@RequestParam("description") String description, @RequestParam("image") MultipartFile image)
-			throws IOException {
-
-		// Save the image file and get the path
-		String imagePath = saveImageFile(image);
-
-		// Create a new Category object
-		Category category = new Category();
-		category.setName(name);
-		category.setDescription(description);
-		category.setEncryptedImage(imagePath); // Store the file path in the database
-
-		// Save the category in the database
-		Category savedCategory = categoryService.addCategory(category);
-
-		// Convert the saved category to CategoryDto to return
-		CategoryDto savedCategoryDto = convertToCategoryDto(savedCategory);
-
-		return ResponseEntity.ok(savedCategoryDto);
-	}
+//	// Method to add a new category http://localhost:8080/api/add
+//	@PostMapping(value = "/add", consumes = { "multipart/form-data" })
+//	public ResponseEntity<CategoryDto> addCategory(@RequestParam("name") String name,
+//			@RequestParam("description") String description, @RequestParam("image") MultipartFile image)
+//			throws IOException {
+//
+//		// Save the image file and get the path
+//		String imagePath = saveImageFile(image);
+//
+//		// Create a new Category object
+//		Category category = new Category();
+//		category.setName(name);
+//		category.setDescription(description);
+//		category.setEncryptedImage(imagePath); // Store the file path in the database
+//
+//		// Save the category in the database
+//		Category savedCategory = categoryService.addCategory(category);
+//
+//		// Convert the saved category to CategoryDto to return
+//		CategoryDto savedCategoryDto = convertToCategoryDto(savedCategory);
+//
+//		return ResponseEntity.ok(savedCategoryDto);
+//	}
 
 	// Convert Category entity to CategoryDto
 	private CategoryDto convertToCategoryDto(Category category) {

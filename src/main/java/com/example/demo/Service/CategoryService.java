@@ -1,12 +1,18 @@
 package com.example.demo.Service;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.example.demo.Dto.CategoryDto;
 import com.example.demo.Dto.CategorySubcategoryProductDto;
@@ -14,6 +20,7 @@ import com.example.demo.Dto.ProductDto;
 import com.example.demo.Dto.SpecificationDTO;
 import com.example.demo.Dto.SpecificationOptionDTO;
 import com.example.demo.Dto.SubcategoryDto;
+import com.example.demo.Imagekit.ImagekitService;
 import com.example.demo.Repository.CategoryRepository;
 import com.example.demo.Repository.ProductRepository;
 import com.example.demo.Repository.SubcategoryRepository;
@@ -21,6 +28,13 @@ import com.example.demo.model.Category;
 import com.example.demo.model.Product;
 import com.example.demo.model.Specification;
 import com.example.demo.model.Subcategory;
+
+import io.imagekit.sdk.exceptions.BadRequestException;
+import io.imagekit.sdk.exceptions.ForbiddenException;
+import io.imagekit.sdk.exceptions.InternalServerException;
+import io.imagekit.sdk.exceptions.TooManyRequestsException;
+import io.imagekit.sdk.exceptions.UnauthorizedException;
+import io.imagekit.sdk.exceptions.UnknownException;
 
 @Service
 public class CategoryService {
@@ -33,14 +47,78 @@ public class CategoryService {
 
 	@Autowired
 	private ProductRepository productRepository;
+	
+	@Autowired
+	private ImagekitService imagekitService;
 
-	public Category addCategory(Category category) {
-		// Check if a category with the same name already exists
-		if (categoryRepository.existsByName(category.getName())) {
-			throw new IllegalArgumentException("Category with this name already exists");
-		}
+	public Category addCategory(Category category) throws InternalServerException, BadRequestException, UnknownException, ForbiddenException, TooManyRequestsException, UnauthorizedException {
+	    // Check if a category with the same name already exists
+	    if (categoryRepository.existsByName(category.getName())) {
+	        throw new IllegalArgumentException("Category with this name already exists");
+	    }
 
-		return categoryRepository.save(category); // Save the new category
+	    // If the category has an image URL, fetch it and convert it into a MultipartFile
+	    if (category.getEncryptedImage() != null && !category.getEncryptedImage().isEmpty()) {
+	        try {
+	            URL url = new URL(category.getEncryptedImage());  // URL from the database or request
+	            InputStream inputStream = url.openStream();
+
+	            // Convert InputStream to byte array
+	            byte[] imageBytes = IOUtils.toByteArray(inputStream);
+
+	            // Create a custom MultipartFile from byte array
+	            MultipartFile multipartFile = new MultipartFile() {
+	                @Override
+	                public String getName() {
+	                    return "file";
+	                }
+
+	                @Override
+	                public String getOriginalFilename() {
+	                    return "image.jpg";  // You can modify the filename as needed
+	                }
+
+	                @Override
+	                public String getContentType() {
+	                    return "image/jpeg";  // Modify based on your image type
+	                }
+
+	                @Override
+	                public boolean isEmpty() {
+	                    return imageBytes.length == 0;
+	                }
+
+	                @Override
+	                public long getSize() {
+	                    return imageBytes.length;
+	                }
+
+	                @Override
+	                public byte[] getBytes() throws IOException {
+	                    return imageBytes;
+	                }
+
+	                @Override
+	                public InputStream getInputStream() throws IOException {
+	                    return new ByteArrayInputStream(imageBytes);
+	                }
+
+	                @Override
+	                public void transferTo(java.io.File dest) throws IOException, IllegalStateException {
+	                    // Optional: Implement if needed for file transfer
+	                }
+	            };
+
+	            // Upload the file
+	            String fullUrl = imagekitService.uploadFileToCategory(multipartFile); // This now uses the MultipartFile directly
+	            category.setEncryptedImage(fullUrl);  // Save the full URL
+
+	        } catch (IOException e) {
+	            throw new RuntimeException("Failed to fetch image from URL and upload", e);
+	        }
+	    }
+
+	    return categoryRepository.save(category); 
 	}
 
 	// Helper method to convert a Category entity to CategoryDto, including
