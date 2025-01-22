@@ -1,5 +1,10 @@
 package com.example.demo.Controller;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -53,12 +58,25 @@ public class CartController {
 		return cart.getItems().size(); // Count of distinct products
 	}
 
-	// Endpoint to calculate and retrieve the total price of the cart
-	@GetMapping("/CartTotal")
-	public ResponseEntity<Double> getCartTotalPrice(@RequestParam String sessionId) {
-		Double totalPrice = productService.calculateCartTotalPrice(sessionId);
-		return ResponseEntity.ok(totalPrice);
-	}
+	 @GetMapping("/total")
+	    public ResponseEntity<Map<String, Object>> getCartTotal(@RequestParam("sessionId") String sessionId) {
+	        try {
+	            // Calculate the total price for the Cart associated with the sessionId
+//	            Double totalPrice = productService.calculateTotalPriceForSession(sessionId);
+	            
+	            // Fetch all CartItems for the session using CartItemService
+	            List<CartItemDto> cartItems = cartService.getAllCartItems(sessionId);
+
+	            // Prepare the response: Include cart items and total price
+	            Map<String, Object> response = new HashMap<>();
+	            response.put("items", cartItems); // CartItems data
+//	            response.put("totalPrice", totalPrice); // Total price for the session
+
+	            return ResponseEntity.ok(response);
+	        } catch (Exception e) {
+	            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+	        }
+	    }
 
 	@DeleteMapping("/remove")
 	public ResponseEntity<String> removeFromCart(@RequestParam String sessionId, @RequestParam Long productId) {
@@ -89,6 +107,24 @@ public class CartController {
 		} catch (RuntimeException e) {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Cart not found or error occurred.");
 		}
+	}
+	
+	@GetMapping("/items")
+	public ResponseEntity<List<CartItemDto>> getAllCartItems(@RequestParam("sessionId") String sessionId) {
+	    try {
+	        List<CartItemDto> cartItems = cartService.getAllCartItems(sessionId);
+	        
+	        // Check if the cart is empty
+	        if (cartItems == null || cartItems.isEmpty()) {
+	            return ResponseEntity.ok(new ArrayList<>()); // Return an empty list
+	        }
+	        
+	        return ResponseEntity.ok(cartItems); // Return 200 OK with the cart items
+	    } catch (IllegalArgumentException e) {
+	        return ResponseEntity.badRequest().body(null); // Return 400 Bad Request for invalid input
+	    } catch (Exception e) {
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null); // Return 500 for server errors
+	    }
 	}
 
 }

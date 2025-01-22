@@ -13,6 +13,7 @@ public class ProductDto {
 	private Long subcategoryId; // ID of the subcategory to associate the product with
 	private Long categoryId;
 	private List<String> encryptedImages; // List of image strings
+	 private List<SpecificationDTO> specifications;
 
 	public ProductDto() {
 		super();
@@ -39,6 +40,15 @@ public class ProductDto {
 	public Double getBasePrice() {
 		return basePrice;
 	}
+	
+	  // Getters and setters
+    public List<SpecificationDTO> getSpecifications() {
+        return specifications;
+    }
+    
+    public void setSpecifications(List<SpecificationDTO> specifications) {
+        this.specifications = specifications;
+    }
 
 	public Long getCategoryId() {
 		return categoryId;

@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.nio.file.Files;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -51,7 +52,8 @@ public class CategoryService {
 	@Autowired
 	private ImagekitService imagekitService;
 
-	public Category addCategory(Category category) throws InternalServerException, BadRequestException, UnknownException, ForbiddenException, TooManyRequestsException, UnauthorizedException {
+	public Category addCategory(Category category) 
+	        throws InternalServerException, BadRequestException, UnknownException, ForbiddenException, TooManyRequestsException, UnauthorizedException {
 	    // Check if a category with the same name already exists
 	    if (categoryRepository.existsByName(category.getName())) {
 	        throw new IllegalArgumentException("Category with this name already exists");
@@ -60,78 +62,78 @@ public class CategoryService {
 	    // If the category has an image URL, fetch it and convert it into a MultipartFile
 	    if (category.getEncryptedImage() != null && !category.getEncryptedImage().isEmpty()) {
 	        try {
-	            URL url = new URL(category.getEncryptedImage());  // URL from the database or request
+	            URL url = new URL(category.getEncryptedImage());
 	            InputStream inputStream = url.openStream();
 
 	            // Convert InputStream to byte array
-	            byte[] imageBytes = IOUtils.toByteArray(inputStream);
+	            byte[] imageBytes = inputStream.readAllBytes(); // Java 9+
+	            inputStream.close();
 
-	            // Create a custom MultipartFile from byte array
-	            MultipartFile multipartFile = new MultipartFile() {
-	                @Override
-	                public String getName() {
-	                    return "file";
-	                }
+	            // Create a MultipartFile using a helper method
+	            MultipartFile multipartFile = createMultipartFileFromBytes(imageBytes, "image.jpg", "image/jpeg");
 
-	                @Override
-	                public String getOriginalFilename() {
-	                    return "image.jpg";  // You can modify the filename as needed
-	                }
-
-	                @Override
-	                public String getContentType() {
-	                    return "image/jpeg";  // Modify based on your image type
-	                }
-
-	                @Override
-	                public boolean isEmpty() {
-	                    return imageBytes.length == 0;
-	                }
-
-	                @Override
-	                public long getSize() {
-	                    return imageBytes.length;
-	                }
-
-	                @Override
-	                public byte[] getBytes() throws IOException {
-	                    return imageBytes;
-	                }
-
-	                @Override
-	                public InputStream getInputStream() throws IOException {
-	                    return new ByteArrayInputStream(imageBytes);
-	                }
-
-	                @Override
-	                public void transferTo(java.io.File dest) throws IOException, IllegalStateException {
-	                    // Optional: Implement if needed for file transfer
-	                }
-	            };
-
-	            // Upload the file
-	            String fullUrl = imagekitService.uploadFileToCategory(multipartFile); // This now uses the MultipartFile directly
-	            category.setEncryptedImage(fullUrl);  // Save the full URL
+	            // Upload the file to ImageKit
+	            String fullUrl = imagekitService.uploadFile(multipartFile);
+	            category.setEncryptedImage(fullUrl); // Save the full URL
 
 	        } catch (IOException e) {
 	            throw new RuntimeException("Failed to fetch image from URL and upload", e);
 	        }
 	    }
 
-	    return categoryRepository.save(category); 
+	    // Save the category in the database
+	    return categoryRepository.save(category);
 	}
+
+	// Helper method to create a MultipartFile from bytes
+	private MultipartFile createMultipartFileFromBytes(byte[] bytes, String fileName, String contentType) {
+	    return new MultipartFile() {
+	        @Override
+	        public String getName() {
+	            return "file";
+	        }
+
+	        @Override
+	        public String getOriginalFilename() {
+	            return fileName;
+	        }
+
+	        @Override
+	        public String getContentType() {
+	            return contentType;
+	        }
+
+	        @Override
+	        public boolean isEmpty() {
+	            return bytes.length == 0;
+	        }
+
+	        @Override
+	        public long getSize() {
+	            return bytes.length;
+	        }
+
+	        @Override
+	        public byte[] getBytes() throws IOException {
+	            return bytes;
+	        }
+
+	        @Override
+	        public InputStream getInputStream() throws IOException {
+	            return new ByteArrayInputStream(bytes);
+	        }
+
+	        @Override
+	        public void transferTo(java.io.File dest) throws IOException, IllegalStateException {
+	            Files.write(dest.toPath(), bytes);
+	        }
+	    };
+	}
+
 
 	// Helper method to convert a Category entity to CategoryDto, including
 	// subcategories
-	private CategoryDto convertToCategoryDto(Category category) {
-		// Convert the list of subcategories
-		List<SubcategoryDto> subcategoryDtos = category.getSubcategories().stream().map(this::convertToSubcategoryDto)
-				.collect(Collectors.toList());
-
-		// Create and return the CategoryDto
-		return new CategoryDto(category.getId(), category.getName(), category.getDescription(),
-				category.getEncryptedImage(), subcategoryDtos);
-	}
+	
 
 	// Helper method to convert a Product entity to ProductDto
 	private ProductDto convertToProductDto(Product product) {
@@ -190,13 +192,7 @@ public class CategoryService {
 		}
 	}
 
-	// Method to get all categories and convert them to CategoryDto objects
-	public List<CategoryDto> getAllCategories() {
-		// Fetch all categories from the repository
-		List<Category> categories = categoryRepository.findAll();
-		// Convert each Category entity to CategoryDto and return the list
-		return categories.stream().map(this::convertToCategoryDto).collect(Collectors.toList());
-	}
+	
 
 	public Category getCategoryById(Long id) {
 		return categoryRepository.findById(id).orElseThrow(() -> new RuntimeException("Category not found"));
@@ -245,6 +241,26 @@ public class CategoryService {
 	public boolean isCategoryNameDuplicate(String categoryName) {
 		// Check if a category with the same name already exists
 		return categoryRepository.existsByName(categoryName);
+	}
+	
+	public List<CategoryDto> getAllCategories() {
+	    // Fetch all categories from the repository
+	    List<Category> categories = categoryRepository.findAll();
+
+	    // Convert each Category entity to CategoryDto and return the list
+	    return categories.stream().map(this::convertToCategoryDto).collect(Collectors.toList());
+	}
+
+	private CategoryDto convertToCategoryDto(Category category) {
+	    List<SubcategoryDto> subcategoryDtos = category.getSubcategories().stream()
+	            .map(this::convertToSubcategoryDto)
+	            .collect(Collectors.toList());
+
+	    // Use the existing encrypted image URL directly
+	    String imageUrl = category.getEncryptedImage();
+
+	    return new CategoryDto(category.getId(), category.getName(), category.getDescription(),
+	                           imageUrl, subcategoryDtos);
 	}
 
 }

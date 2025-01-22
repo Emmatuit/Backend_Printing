@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.example.demo.Repository.CartItemRepository;
 import com.example.demo.Repository.CartRepository;
 import com.example.demo.Repository.ProductRepository;
 import com.example.demo.Repository.SpecificationOptionRepository;
@@ -16,6 +17,7 @@ import com.example.demo.Repository.SpecificationRepository;
 import com.example.demo.Repository.SubcategoryRepository;
 import com.example.demo.calculations.CalculationBased;
 import com.example.demo.model.Cart;
+import com.example.demo.model.CartItem;
 import com.example.demo.model.Product;
 import com.example.demo.model.Specification;
 import com.example.demo.model.SpecificationOption;
@@ -23,23 +25,56 @@ import com.example.demo.model.Subcategory;
 
 @Service
 public class ProductService {
-	@Autowired
+	
 	private ProductRepository productRepository;
+    private SubcategoryRepository subcategoryRepository;
+    private CartRepository cartRepository;
+    private CartItemRepository cartItemRepository;
+    private CalculationBased calculationBased;
+    private SpecificationRepository specificationRepository;
+    private SpecificationOptionRepository specificationOptionRepository;
 
-	@Autowired
-	private SubcategoryRepository subcategoryRepository;
+    // Setter for ProductRepository
+    @Autowired
+    public void setProductRepository(ProductRepository productRepository) {
+        this.productRepository = productRepository;
+    }
 
-	@Autowired
-	private CartRepository cartRepository;
-	
-	@Autowired
-	private CalculationBased calculationBased;
-	
-	@Autowired
-	private SpecificationRepository specificationRepository;
-	
-	@Autowired
-	private SpecificationOptionRepository  specificationOptionRepository;
+    // Setter for SubcategoryRepository
+    @Autowired
+    public void setSubcategoryRepository(SubcategoryRepository subcategoryRepository) {
+        this.subcategoryRepository = subcategoryRepository;
+    }
+
+    // Setter for CartRepository
+    @Autowired
+    public void setCartRepository(CartRepository cartRepository) {
+        this.cartRepository = cartRepository;
+    }
+
+    // Setter for CartItemRepository
+    @Autowired
+    public void setCartItemRepository(CartItemRepository cartItemRepository) {
+        this.cartItemRepository = cartItemRepository;
+    }
+
+    // Setter for CalculationBased
+    @Autowired
+    public void setCalculationBased(CalculationBased calculationBased) {
+        this.calculationBased = calculationBased;
+    }
+
+    // Setter for SpecificationRepository
+    @Autowired
+    public void setSpecificationRepository(SpecificationRepository specificationRepository) {
+        this.specificationRepository = specificationRepository;
+    }
+
+    // Setter for SpecificationOptionRepository
+    @Autowired
+    public void setSpecificationOptionRepository(SpecificationOptionRepository specificationOptionRepository) {
+        this.specificationOptionRepository = specificationOptionRepository;
+    }
 	
 	 private static final Logger log = LoggerFactory.getLogger(ProductService.class);
 
@@ -49,39 +84,7 @@ public class ProductService {
 	}
 
 
-//	public Double calculateTotalPrice(Long productId, Integer selectedQuantity, Long selectedOptionId) {
-//	    // Fetch the product from the database using the productId
-//	    Product product = productRepository.findById(productId)
-//	            .orElseThrow(() -> new RuntimeException("Product not found"));
-//
-//	    // Get the base price of the product
-//	    Double basePrice = product.getBaseprice();
-//	    log.warn("Base price for productId {}: {}", productId, basePrice);
-//
-//	    // Initialize the additional cost
-//	    double additionalCost = 0.0;
-//
-//	    // If a selectedOptionId is provided, fetch its price
-//	    if (selectedOptionId != null) {
-//	        // Fetch the specification option based on the selectedOptionId
-//	        SpecificationOption selectedOption = specificationOptionRepository.findById(selectedOptionId)
-//	                .orElseThrow(() -> new RuntimeException("Specification option not found"));
-//
-//	        // Get the price of the selected option
-//	        additionalCost = selectedOption.getPrice();
-//	        log.warn("Selected specification option: {}, Price: {}", selectedOption.getName(), additionalCost);
-//	    } else {
-//	        log.debug("No specification option selected for productId {}", productId);
-//	    }
-//
-//	    // Calculate the total price (base price + additional cost) * selected quantity
-//	    double totalPrice = (basePrice + additionalCost) * selectedQuantity;
-//
-//	    // Log the total calculated price
-//	    log.warn("Calculated total price for productId {}: {}", productId, totalPrice);
-//
-//	    return totalPrice;
-//	}
+	
 	public Double calculateTotalPrice(Long productId, Integer selectedQuantity, List<Long> selectedOptionIds) {
 	    // Fetch the product using the productId
 	    Product product = productRepository.findById(productId)

@@ -32,7 +32,7 @@ public class SubcategoryController {
 	private CategoryService categoryService;
 
 	@PostMapping("/{categoryId}/subcategories/add")
-	public ResponseEntity<SubcategoryDto> addSubcategory(@PathVariable Long categoryId,
+	public ResponseEntity<SubcategoryDto> addSubcategory(@PathVariable("categoryId") Long categoryId,
 			@RequestBody SubcategoryDto subcategoryDto) {
 		// Call service to add subcategory and convert to DTO
 		SubcategoryDto addedSubcategory = subcategoryService.addSubcategory(categoryId, subcategoryDto);
@@ -67,7 +67,7 @@ public class SubcategoryController {
 
 	// API to get all subcategories and products by category ID
 	@GetMapping("/{categoryId}/subcategories-products")
-	public ResponseEntity<CategorySubcategoryProductDto> getSubcategoriesAndProducts(@PathVariable Long categoryId) {
+	public ResponseEntity<CategorySubcategoryProductDto> getSubcategoriesAndProducts(@PathVariable("categoryId") Long categoryId) {
 		CategorySubcategoryProductDto response = categoryService.getSubcategoriesAndProductsByCategoryId(categoryId);
 		return ResponseEntity.ok(response);
 	}

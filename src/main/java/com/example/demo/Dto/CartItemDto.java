@@ -1,10 +1,13 @@
 package com.example.demo.Dto;
 
+import java.util.List;
+
 public class CartItemDto {
 	private Long productId;
 	private Integer selectedQuantity;
 	private CartProductDisplay productDisplay; // Store CartProductDisplay here
 	private Double calculatedPrice; // New field for the calculated price
+	 private List<Long> selectedOptionIds;
 
 	public CartItemDto() {
 	}
@@ -20,6 +23,14 @@ public class CartItemDto {
 
 	public Double getCalculatedPrice() {
 		return calculatedPrice;
+	}
+
+	public List<Long> getSelectedOptionIds() {
+		return selectedOptionIds;
+	}
+
+	public void setSelectedOptionIds(List<Long> selectedOptionIds) {
+		this.selectedOptionIds = selectedOptionIds;
 	}
 
 	public CartProductDisplay getProductDisplay() {

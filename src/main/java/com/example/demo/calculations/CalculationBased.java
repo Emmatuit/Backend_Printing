@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import com.example.demo.Repository.ProductRepository;
@@ -16,8 +17,12 @@ public class CalculationBased {
 	@Autowired
 	private ProductRepository productRepository;
 
-	@Autowired
 	private ProductService productService;
+	
+	 @Autowired
+	    public void setProductService(@Lazy ProductService productService) {
+	        this.productService = productService;
+}
 
 	// Method to generate quantity options for a product
 	public List<Integer> generateQuantityOptions(Long productId) {
@@ -26,7 +31,6 @@ public class CalculationBased {
 				.orElseThrow(() -> new IllegalArgumentException("Invalid product ID"));
 
 		List<Integer> options = new ArrayList<>();
-
 		// Generate quantity options based on the product's MinOrderQuantity,
 		// MaxQuantity, and IncrementStep
 		for (int qty = product.getMinOrderquantity(); qty <= product.getMaxQuantity(); qty += product

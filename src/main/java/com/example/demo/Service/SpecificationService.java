@@ -3,6 +3,7 @@ package com.example.demo.Service;
 
 import com.example.demo.Repository.SpecificationOptionRepository;
 import com.example.demo.Repository.SpecificationRepository;
+import com.example.demo.model.Product;
 import com.example.demo.model.Specification;
 import com.example.demo.model.SpecificationOption;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +17,8 @@ public class SpecificationService {
 
     @Autowired
     private SpecificationRepository specificationRepository;
+    
+    
 
     @Autowired
     private SpecificationOptionRepository specificationOptionRepository;
@@ -60,5 +63,17 @@ public class SpecificationService {
      */
     public void deleteSpecification(Long id) {
         specificationRepository.deleteById(id);
+    }
+    
+    
+
+    /**
+     * Retrieves all specifications for a given product.
+     * 
+     * @param product The product for which specifications are fetched.
+     * @return List of specifications.
+     */
+    public List<Specification> getSpecificationsByProduct(Product product) {
+        return specificationRepository.findByProduct(product);
     }
 }

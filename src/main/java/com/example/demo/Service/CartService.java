@@ -6,8 +6,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.GetMapping;
 
 import com.example.demo.Dto.CartDto;
 import com.example.demo.Dto.CartItemDto;
@@ -39,45 +41,56 @@ public class CartService {
 	private ProductRepository productRepository;
 
 	public void addToCart(String sessionId, CartItemDto cartItemDTO) {
-		// Find or create cart
-		Cart cart = cartRepository.findBySessionId(sessionId).orElseGet(() -> cartRepository.save(new Cart(sessionId)));
+	    // Find or create cart
+	    Cart cart = cartRepository.findBySessionId(sessionId)
+	            .orElseGet(() -> cartRepository.save(new Cart(sessionId)));
 
-		// Check for null values in DTO
-		if (cartItemDTO.getSelectedQuantity() == null || cartItemDTO.getSelectedQuantity() <= 0) {
-			throw new IllegalArgumentException("Quantity must be provided and greater than 0");
-		}
+	    // Check for null values in DTO
+	    if (cartItemDTO.getSelectedQuantity() == null || cartItemDTO.getSelectedQuantity() <= 0) {
+	        throw new IllegalArgumentException("Quantity must be provided and greater than 0");
+	    }
 
-		// Fetch the product and validate the selected quantity
-		Product product = productRepository.findById(cartItemDTO.getProductId())
-				.orElseThrow(() -> new IllegalArgumentException("Invalid product ID"));
+	    // Fetch the product and validate the selected quantity
+	    Product product = productRepository.findById(cartItemDTO.getProductId())
+	            .orElseThrow(() -> new IllegalArgumentException("Invalid product ID"));
 
-		// Generate valid quantity options
-		List<Integer> validQuantities = calculationBased.generateQuantityOptions(product.getId());
-		if (!validQuantities.contains(cartItemDTO.getSelectedQuantity())) {
-			throw new IllegalArgumentException("Selected quantity is invalid for the product");
-		}
+	    // Generate valid quantity options
+	    List<Integer> validQuantities = calculationBased.generateQuantityOptions(product.getId());
+	    if (!validQuantities.contains(cartItemDTO.getSelectedQuantity())) {
+	        throw new IllegalArgumentException("Selected quantity is invalid for the product");
+	    }
 
-		// Check if the product is already in the cart
-		boolean productExists = cart.getItems().stream()
-				.anyMatch(item -> item.getProductId().equals(cartItemDTO.getProductId()));
+	    // Check if the product is already in the cart
+	    boolean productExists = cart.getItems().stream()
+	            .anyMatch(item -> item.getProductId().equals(cartItemDTO.getProductId()));
 
-		if (productExists) {
-			throw new IllegalArgumentException("This product is already in your cart");
-		}
+	    if (productExists) {
+	        throw new IllegalArgumentException("This product is already in your cart");
+	    }
 
-		// Calculate the price
-		Double calculatedPrice = productService.calculateTotalPrice(cartItemDTO.getProductId(),
-				cartItemDTO.getSelectedQuantity());
+	    // Ensure selectedOptionIds is not null
+	    List<Long> selectedOptionIds = cartItemDTO.getSelectedOptionIds();
+	    if (selectedOptionIds == null) {
+	        selectedOptionIds = Collections.emptyList(); // Use an empty list if no options are selected
+	    }
 
-		// Map DTO to CartItem and add to cart
-		CartItem cartItem = new CartItem();
-		cartItem.setProductId(cartItemDTO.getProductId());
-		cartItem.setQuantity(cartItemDTO.getSelectedQuantity());
-		cartItem.setPrice(calculatedPrice);
+	    // Calculate the price
+	    Double calculatedPrice = productService.calculateTotalPrice(
+	            cartItemDTO.getProductId(),
+	            cartItemDTO.getSelectedQuantity(),
+	            selectedOptionIds // Pass the selected option IDs here
+	    );
 
-		cart.addItem(cartItem);
-		cartRepository.save(cart); // Save the cart and its items
+	    // Map DTO to CartItem and add to cart
+	    CartItem cartItem = new CartItem();
+	    cartItem.setProductId(cartItemDTO.getProductId());
+	    cartItem.setQuantity(cartItemDTO.getSelectedQuantity());
+	    cartItem.setPrice(calculatedPrice);
+
+	    cart.addItem(cartItem);
+	    cartRepository.save(cart); // Save the cart and its items
 	}
+
 
 	@Scheduled(cron = "0 0 */1 * * *") // Every hour (use this as a realistic testing interval)
 	public void clearExpiredCarts() {
@@ -137,6 +150,36 @@ public class CartService {
 		return cartRepository.findBySessionId(sessionId)
 				.orElseThrow(() -> new RuntimeException("Cart not found for session: " + sessionId));
 	}
+	
+	public List<CartItemDto> getAllCartItems(String sessionId) {
+        // Fetch the cart by session ID
+        Cart cart = cartRepository.findBySessionId(sessionId)
+                .orElseThrow(() -> new IllegalArgumentException("Cart not found for session ID: " + sessionId));
+
+        // Map cart items to DTOs
+        return cart.getItems().stream()
+                .map(cartItem -> {
+                    CartItemDto cartItemDto = new CartItemDto();
+                    cartItemDto.setProductId(cartItem.getProductId());
+                    cartItemDto.setSelectedQuantity(cartItem.getQuantity());
+                    cartItemDto.setCalculatedPrice(cartItem.getPrice());
+
+                    // Fetch product details and populate product display
+                    Product product = productRepository.findById(cartItem.getProductId())
+                            .orElseThrow(() -> new IllegalArgumentException("Invalid product ID: " + cartItem.getProductId()));
+
+                    CartProductDisplay productDisplay = new CartProductDisplay();
+                    productDisplay.setName(product.getName());
+                    productDisplay.setDescription(product.getDescription());
+                    productDisplay.setBaseprice(product.getBaseprice());
+
+                    cartItemDto.setProductDisplay(productDisplay);
+
+                    return cartItemDto;
+                })
+                .collect(Collectors.toList());
+    }
+
 
 // // Scheduled to run daily at midnight
 //    @Scheduled(cron = "0 0 0 * * ?")

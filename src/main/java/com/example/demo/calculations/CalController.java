@@ -13,8 +13,13 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/products")
 public class CalController {
 
-	@Autowired
 	private CalculationBased calculationBased;
+
+    // Setter for CalculationBased
+    @Autowired
+    public void setCalculationBased(CalculationBased calculationBased) {
+        this.calculationBased = calculationBased;
+    }
 
 	// API to get quantity options for a product
 	@GetMapping("/{productId}/quantity-options")

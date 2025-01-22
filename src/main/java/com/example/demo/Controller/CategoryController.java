@@ -16,10 +16,18 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.example.demo.Dto.CategoryDto;
+import com.example.demo.Imagekit.ImagekitService;
 import com.example.demo.Service.CategoryService;
 import com.example.demo.Service.ProductService;
 import com.example.demo.Service.SubcategoryService;
 import com.example.demo.model.Category;
+
+import io.imagekit.sdk.exceptions.BadRequestException;
+import io.imagekit.sdk.exceptions.ForbiddenException;
+import io.imagekit.sdk.exceptions.InternalServerException;
+import io.imagekit.sdk.exceptions.TooManyRequestsException;
+import io.imagekit.sdk.exceptions.UnauthorizedException;
+import io.imagekit.sdk.exceptions.UnknownException;
 
 @RestController
 @RequestMapping("/api")
@@ -30,6 +38,9 @@ public class CategoryController {
 
 	@Autowired
 	private ProductService productService;
+	
+	@Autowired
+	private ImagekitService imagekitService;
 
 	private final SubcategoryService subcategoryService;
 
@@ -37,29 +48,29 @@ public class CategoryController {
 		this.subcategoryService = subcategoryService;
 	}
 
-//	// Method to add a new category http://localhost:8080/api/add
-//	@PostMapping(value = "/add", consumes = { "multipart/form-data" })
-//	public ResponseEntity<CategoryDto> addCategory(@RequestParam("name") String name,
-//			@RequestParam("description") String description, @RequestParam("image") MultipartFile image)
-//			throws IOException {
-//
-//		// Save the image file and get the path
-//		String imagePath = saveImageFile(image);
-//
-//		// Create a new Category object
-//		Category category = new Category();
-//		category.setName(name);
-//		category.setDescription(description);
-//		category.setEncryptedImage(imagePath); // Store the file path in the database
-//
-//		// Save the category in the database
-//		Category savedCategory = categoryService.addCategory(category);
-//
-//		// Convert the saved category to CategoryDto to return
-//		CategoryDto savedCategoryDto = convertToCategoryDto(savedCategory);
-//
-//		return ResponseEntity.ok(savedCategoryDto);
-//	}
+	// Method to add a new category http://localhost:8080/api/add
+	@PostMapping(value = "/add", consumes = { "multipart/form-data" })
+	public ResponseEntity<CategoryDto> addCategory(@RequestParam("name") String name,
+			@RequestParam("description") String description, @RequestParam("image") MultipartFile image)
+			throws IOException, InternalServerException, BadRequestException, UnknownException, ForbiddenException, TooManyRequestsException, UnauthorizedException {
+
+		// Save the image file and get the path
+		String imagePath = imagekitService.uploadFile(image);
+
+		// Create a new Category object
+		Category category = new Category();
+		category.setName(name);
+		category.setDescription(description);
+		category.setEncryptedImage(imagePath); // Store the file path in the database
+
+		// Save the category in the database
+		Category savedCategory = categoryService.addCategory(category);
+
+		// Convert the saved category to CategoryDto to return
+		CategoryDto savedCategoryDto = convertToCategoryDto(savedCategory);
+
+		return ResponseEntity.ok(savedCategoryDto);
+	}
 
 	// Convert Category entity to CategoryDto
 	private CategoryDto convertToCategoryDto(Category category) {
@@ -85,26 +96,6 @@ public class CategoryController {
 		return categoryService.getAllCategories();
 	}
 
-	// Utility method to save the image file to the server
-	private String saveImageFile(MultipartFile file) throws IOException {
-		// Define the directory where you want to save images
-		String uploadDir = "C:\\Users\\PC\\Music\\ecommerce1234"; // Ensure this directory exists
-
-		// Create directory if it doesn't exist
-		File dir = new File(uploadDir);
-		if (!dir.exists()) {
-			dir.mkdirs();
-		}
-
-		// Generate a unique filename for the image
-		String filename = System.currentTimeMillis() + "_" + file.getOriginalFilename();
-		File serverFile = new File(dir, filename);
-
-		// Transfer the file to the server directory
-		file.transferTo(serverFile);
-
-		// Return the image path to store in the database
-		return uploadDir + "\\" + filename;
-	}
+	
 
 }
