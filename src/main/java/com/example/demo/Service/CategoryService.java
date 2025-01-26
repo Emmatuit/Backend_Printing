@@ -10,7 +10,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -18,8 +17,6 @@ import org.springframework.web.multipart.MultipartFile;
 import com.example.demo.Dto.CategoryDto;
 import com.example.demo.Dto.CategorySubcategoryProductDto;
 import com.example.demo.Dto.ProductDto;
-import com.example.demo.Dto.SpecificationDTO;
-import com.example.demo.Dto.SpecificationOptionDTO;
 import com.example.demo.Dto.SubcategoryDto;
 import com.example.demo.Imagekit.ImagekitService;
 import com.example.demo.Repository.CategoryRepository;
@@ -27,7 +24,6 @@ import com.example.demo.Repository.ProductRepository;
 import com.example.demo.Repository.SubcategoryRepository;
 import com.example.demo.model.Category;
 import com.example.demo.model.Product;
-import com.example.demo.model.Specification;
 import com.example.demo.model.Subcategory;
 
 import io.imagekit.sdk.exceptions.BadRequestException;
@@ -48,11 +44,11 @@ public class CategoryService {
 
 	@Autowired
 	private ProductRepository productRepository;
-	
+
 	@Autowired
 	private ImagekitService imagekitService;
 
-	public Category addCategory(Category category) 
+	public Category addCategory(Category category)
 	        throws InternalServerException, BadRequestException, UnknownException, ForbiddenException, TooManyRequestsException, UnauthorizedException {
 	    // Check if a category with the same name already exists
 	    if (categoryRepository.existsByName(category.getName())) {
@@ -133,7 +129,7 @@ public class CategoryService {
 
 	// Helper method to convert a Category entity to CategoryDto, including
 	// subcategories
-	
+
 
 	// Helper method to convert a Product entity to ProductDto
 	private ProductDto convertToProductDto(Product product) {
@@ -145,8 +141,8 @@ public class CategoryService {
 
 		);
 	}
-	
-	
+
+
 	// Helper method to convert a Subcategory entity to SubcategoryDto, including
 	// products
 	private SubcategoryDto convertToSubcategoryDto(Subcategory subcategory) {
@@ -192,7 +188,7 @@ public class CategoryService {
 		}
 	}
 
-	
+
 
 	public Category getCategoryById(Long id) {
 		return categoryRepository.findById(id).orElseThrow(() -> new RuntimeException("Category not found"));
@@ -242,7 +238,7 @@ public class CategoryService {
 		// Check if a category with the same name already exists
 		return categoryRepository.existsByName(categoryName);
 	}
-	
+
 	public List<CategoryDto> getAllCategories() {
 	    // Fetch all categories from the repository
 	    List<Category> categories = categoryRepository.findAll();

@@ -6,10 +6,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.GetMapping;
 
 import com.example.demo.Dto.CartDto;
 import com.example.demo.Dto.CartItemDto;
@@ -17,6 +15,7 @@ import com.example.demo.Dto.CartProductDisplay;
 import com.example.demo.Repository.CartItemRepository;
 import com.example.demo.Repository.CartRepository;
 import com.example.demo.Repository.ProductRepository;
+import com.example.demo.Repository.SpecificationOptionRepository;
 import com.example.demo.calculations.CalculationBased;
 import com.example.demo.model.Cart;
 import com.example.demo.model.CartItem;
@@ -40,57 +39,111 @@ public class CartService {
 	@Autowired
 	private ProductRepository productRepository;
 
-	public void addToCart(String sessionId, CartItemDto cartItemDTO) {
-	    // Find or create cart
-	    Cart cart = cartRepository.findBySessionId(sessionId)
-	            .orElseGet(() -> cartRepository.save(new Cart(sessionId)));
+	@Autowired
+	private SpecificationOptionRepository specificationOptionRepository;
 
-	    // Check for null values in DTO
-	    if (cartItemDTO.getSelectedQuantity() == null || cartItemDTO.getSelectedQuantity() <= 0) {
-	        throw new IllegalArgumentException("Quantity must be provided and greater than 0");
+	public void addToCart(String sessionId, CartItemDto cartItemDTO) {
+	    Cart cart = getCartBySessionId(sessionId);
+
+	    // Prevent adding duplicate items
+	    CartItem existingCartItem = findCartItem(cart, cartItemDTO.getProductId());
+	    if (existingCartItem != null) {
+	        throw new IllegalArgumentException("Product already in cart");
 	    }
 
-	    // Fetch the product and validate the selected quantity
+	    // Validate and fetch product
 	    Product product = productRepository.findById(cartItemDTO.getProductId())
 	            .orElseThrow(() -> new IllegalArgumentException("Invalid product ID"));
 
-	    // Generate valid quantity options
-	    List<Integer> validQuantities = calculationBased.generateQuantityOptions(product.getId());
-	    if (!validQuantities.contains(cartItemDTO.getSelectedQuantity())) {
-	        throw new IllegalArgumentException("Selected quantity is invalid for the product");
+	    // Validate selected specifications
+	    List<Long> selectedSpecifications = cartItemDTO.getSelectedOptionIds();
+	    if (selectedSpecifications == null || selectedSpecifications.isEmpty()) {
+	        throw new IllegalArgumentException("Specifications must be provided");
 	    }
 
-	    // Check if the product is already in the cart
-	    boolean productExists = cart.getItems().stream()
-	            .anyMatch(item -> item.getProductId().equals(cartItemDTO.getProductId()));
-
-	    if (productExists) {
-	        throw new IllegalArgumentException("This product is already in your cart");
-	    }
-
-	    // Ensure selectedOptionIds is not null
-	    List<Long> selectedOptionIds = cartItemDTO.getSelectedOptionIds();
-	    if (selectedOptionIds == null) {
-	        selectedOptionIds = Collections.emptyList(); // Use an empty list if no options are selected
-	    }
-
-	    // Calculate the price
-	    Double calculatedPrice = productService.calculateTotalPrice(
+	    // Calculate total price
+	    Double totalPrice = productService.calculateTotalPrice(
 	            cartItemDTO.getProductId(),
 	            cartItemDTO.getSelectedQuantity(),
-	            selectedOptionIds // Pass the selected option IDs here
+	            selectedSpecifications
 	    );
 
-	    // Map DTO to CartItem and add to cart
+	    // Create and add the cart item
 	    CartItem cartItem = new CartItem();
 	    cartItem.setProductId(cartItemDTO.getProductId());
 	    cartItem.setQuantity(cartItemDTO.getSelectedQuantity());
-	    cartItem.setPrice(calculatedPrice);
+	    cartItem.setPrice(totalPrice);
+	    cartItem.setSelectedOptionIds(selectedSpecifications); // Set selected specifications
 
+	    // Create and set the product display
+	    CartProductDisplay productDisplay = new CartProductDisplay();
+	    productDisplay.setBaseprice(product.getBaseprice());
+	    productDisplay.setDescription(product.getDescription());
+	    productDisplay.setName(product.getName());
+
+	    cartItemDTO.setProductDisplay(productDisplay); // Set the CartProductDisplay in the DTO
+
+	    // Add item to cart
 	    cart.addItem(cartItem);
-	    cartRepository.save(cart); // Save the cart and its items
+	    cartRepository.save(cart);
 	}
 
+//	public void addToCart(String sessionId, CartItemDto cartItemDTO) {
+//	    // Find or create cart
+//	    Cart cart = cartRepository.findBySessionId(sessionId)
+//	            .orElseGet(() -> cartRepository.save(new Cart(sessionId)));
+//
+//	    // Check for null values in DTO
+//	    if (cartItemDTO.getSelectedQuantity() == null || cartItemDTO.getSelectedQuantity() <= 0) {
+//	        throw new IllegalArgumentException("Quantity must be provided and greater than 0");
+//	    }
+//
+//	    // Fetch the product
+//	    Product product = productRepository.findById(cartItemDTO.getProductId())
+//	            .orElseThrow(() -> new IllegalArgumentException("Invalid product ID"));
+//
+//	    // Validate the selected specification options
+//	    List<Long> selectedOptionIds = cartItemDTO.getSelectedOptionIds();
+//	    if (selectedOptionIds == null) {
+//	        selectedOptionIds = Collections.emptyList(); // Default to empty list if no options are selected
+//	    }
+//
+//	    // Fetch all valid SpecificationOption IDs for the product
+//	    List<Long> validOptionIds = product.getSpecifications()
+//	            .stream()
+//	            .flatMap(spec -> spec.getOptions().stream()) // Flatten all options across specifications
+//	            .map(SpecificationOption::getId)
+//	            .collect(Collectors.toList());
+//
+//	    // Check if the selected options are valid
+//	    if (!validOptionIds.containsAll(selectedOptionIds)) {
+//	        throw new IllegalArgumentException("One or more selected options are invalid for this product");
+//	    }
+//
+//	    // Check if the product is already in the cart
+//	    boolean productExists = cart.getItems().stream()
+//	            .anyMatch(item -> item.getProductId().equals(cartItemDTO.getProductId()));
+//	    if (productExists) {
+//	        throw new IllegalArgumentException("This product is already in your cart");
+//	    }
+//
+//	    // Calculate the total price, including specification option prices
+//	    // Call the calculateTotalPrice method
+//        Double calculatedPrice = productService.calculateTotalPrice(
+//                cartItemDTO.getProductId(),
+//                cartItemDTO.getSelectedQuantity(),
+//                validOptionIds
+//        );
+//	    // Map DTO to CartItem and add to cart
+//	    CartItem cartItem = new CartItem();
+//	    cartItem.setProductId(cartItemDTO.getProductId());
+//	    cartItem.setQuantity(cartItemDTO.getSelectedQuantity());
+//	    cartItem.setPrice(calculatedPrice);
+//	    cartItem.setSelectedOptionIds(selectedOptionIds); // Save the selected options
+//
+//	    cart.addItem(cartItem);
+//	    cartRepository.save(cart); // Save the cart and its items
+//	}
 
 	@Scheduled(cron = "0 0 */1 * * *") // Every hour (use this as a realistic testing interval)
 	public void clearExpiredCarts() {
@@ -150,7 +203,7 @@ public class CartService {
 		return cartRepository.findBySessionId(sessionId)
 				.orElseThrow(() -> new RuntimeException("Cart not found for session: " + sessionId));
 	}
-	
+
 	public List<CartItemDto> getAllCartItems(String sessionId) {
         // Fetch the cart by session ID
         Cart cart = cartRepository.findBySessionId(sessionId)

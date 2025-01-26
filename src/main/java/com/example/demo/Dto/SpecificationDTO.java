@@ -1,13 +1,14 @@
 package com.example.demo.Dto;
 
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class SpecificationDTO {
 
     private Long id;
     private String name; // e.g., "Color", "Size"
-    private List<SpecificationOptionDTO> options; // List of options for this specification
+    private List<SpecificationOptionDTO> options = new ArrayList<>(); // Initialize the list; // List of options for this specification
 
     // Default constructor
     public SpecificationDTO() {}

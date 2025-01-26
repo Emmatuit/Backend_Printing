@@ -23,7 +23,7 @@ public class CalController {
 
 	// API to get quantity options for a product
 	@GetMapping("/{productId}/quantity-options")
-	public ResponseEntity<List<Integer>> getQuantityOptions(@PathVariable Long productId) {
+	public ResponseEntity<List<Integer>> getQuantityOptions(@PathVariable("productId") Long productId) {
 		List<Integer> quantityOptions = calculationBased.generateQuantityOptions(productId);
 		return ResponseEntity.ok(quantityOptions);
 	}

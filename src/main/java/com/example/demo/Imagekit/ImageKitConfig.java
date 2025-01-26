@@ -1,10 +1,11 @@
 package com.example.demo.Imagekit;
 
-import io.imagekit.sdk.ImageKit;
-import io.imagekit.sdk.config.Configuration;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.context.annotation.Bean;
+
+import io.imagekit.sdk.ImageKit;
+import io.imagekit.sdk.config.Configuration;
 
 
 @SpringBootConfiguration

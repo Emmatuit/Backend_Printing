@@ -18,7 +18,7 @@ public class CalculationBased {
 	private ProductRepository productRepository;
 
 	private ProductService productService;
-	
+
 	 @Autowired
 	    public void setProductService(@Lazy ProductService productService) {
 	        this.productService = productService;

@@ -1,6 +1,10 @@
 package com.example.demo.model;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -31,14 +35,33 @@ public class CartItem {
 	@Column(nullable = false)
 	private Double price;
 
+
+    @ElementCollection
+    private List<Long> selectedOptionIds = new ArrayList<>(); // Store selected option IDs
+
+
+	public List<Long> getSelectedOptionIds() {
+		return selectedOptionIds;
+	}
+
+	public void setSelectedOptionIds(List<Long> selectedOptionIds) {
+		this.selectedOptionIds = selectedOptionIds;
+	}
+
 	// Constructors, getters, and setters
 	public CartItem() {
 	}
 
-	public CartItem(Long productId, Integer quantity, Double price) {
+
+
+	public CartItem(Long id, Long productId, Integer quantity, Cart cart, Double price, List<Long> selectedOptionIds) {
+		super();
+		this.id = id;
 		this.productId = productId;
 		this.quantity = quantity;
+		this.cart = cart;
 		this.price = price;
+		this.selectedOptionIds = selectedOptionIds;
 	}
 
 	// Other getters and setters...

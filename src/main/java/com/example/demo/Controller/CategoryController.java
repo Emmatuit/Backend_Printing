@@ -1,6 +1,5 @@
 package com.example.demo.Controller;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
@@ -38,7 +37,7 @@ public class CategoryController {
 
 	@Autowired
 	private ProductService productService;
-	
+
 	@Autowired
 	private ImagekitService imagekitService;
 
@@ -96,6 +95,6 @@ public class CategoryController {
 		return categoryService.getAllCategories();
 	}
 
-	
+
 
 }

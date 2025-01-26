@@ -1,6 +1,7 @@
 package com.example.demo.model;
 
 
+import java.util.ArrayList;
 import java.util.List;
 
 import jakarta.persistence.CascadeType;
@@ -22,15 +23,16 @@ public class Specification {
 
     private String name; // e.g., "Color", "Size"
 
-    @OneToMany(mappedBy = "specification", cascade = CascadeType.ALL,  fetch = FetchType.LAZY)
-    private List<SpecificationOption> options;
-    
+    @OneToMany(mappedBy = "specification", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<SpecificationOption> options = new ArrayList<>();
+
+
     @ManyToOne
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
 
-    
+
 	public Specification(Long id, String name, List<SpecificationOption> options, Product product) {
 		super();
 		this.id = id;
@@ -75,8 +77,8 @@ public class Specification {
 	public void setOptions(List<SpecificationOption> options) {
 		this.options = options;
 	}
-    
-    
+
+
 
     // Getters and Setters
 }

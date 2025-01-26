@@ -39,7 +39,7 @@ public class CartController {
 
 	// Add item to cart
 	@PostMapping("/add")
-	public ResponseEntity<String> addToCart(@RequestParam String sessionId, @RequestBody CartItemDto cartItemDTO) {
+	public ResponseEntity<String> addToCart(@RequestParam("sessionId") String sessionId, @RequestBody CartItemDto cartItemDTO) {
 		cartService.addToCart(sessionId, cartItemDTO);
 		return ResponseEntity.ok("Item added to cart!");
 	}
@@ -47,7 +47,7 @@ public class CartController {
 	// Get the cart details
 
 	@GetMapping("/get")
-	public ResponseEntity<CartDto> getCart(@RequestParam String sessionId) {
+	public ResponseEntity<CartDto> getCart(@RequestParam("sessionId") String sessionId) {
 		CartDto cartDto = cartService.getCart(sessionId);
 		return ResponseEntity.ok(cartDto);
 	}
@@ -63,7 +63,7 @@ public class CartController {
 	        try {
 	            // Calculate the total price for the Cart associated with the sessionId
 //	            Double totalPrice = productService.calculateTotalPriceForSession(sessionId);
-	            
+
 	            // Fetch all CartItems for the session using CartItemService
 	            List<CartItemDto> cartItems = cartService.getAllCartItems(sessionId);
 
@@ -79,7 +79,7 @@ public class CartController {
 	    }
 
 	@DeleteMapping("/remove")
-	public ResponseEntity<String> removeFromCart(@RequestParam String sessionId, @RequestParam Long productId) {
+	public ResponseEntity<String> removeFromCart(@RequestParam("sessionId") String sessionId, @RequestParam("productId") Long productId) {
 		try {
 			Cart cart = cartRepository.findBySessionId(sessionId)
 					.orElseThrow(() -> new RuntimeException("Cart not found"));
@@ -108,17 +108,17 @@ public class CartController {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Cart not found or error occurred.");
 		}
 	}
-	
+
 	@GetMapping("/items")
 	public ResponseEntity<List<CartItemDto>> getAllCartItems(@RequestParam("sessionId") String sessionId) {
 	    try {
 	        List<CartItemDto> cartItems = cartService.getAllCartItems(sessionId);
-	        
+
 	        // Check if the cart is empty
 	        if (cartItems == null || cartItems.isEmpty()) {
 	            return ResponseEntity.ok(new ArrayList<>()); // Return an empty list
 	        }
-	        
+
 	        return ResponseEntity.ok(cartItems); // Return 200 OK with the cart items
 	    } catch (IllegalArgumentException e) {
 	        return ResponseEntity.badRequest().body(null); // Return 400 Bad Request for invalid input

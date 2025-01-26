@@ -40,12 +40,12 @@ public class ProductDto {
 	public Double getBasePrice() {
 		return basePrice;
 	}
-	
+
 	  // Getters and setters
     public List<SpecificationDTO> getSpecifications() {
         return specifications;
     }
-    
+
     public void setSpecifications(List<SpecificationDTO> specifications) {
         this.specifications = specifications;
     }

@@ -16,8 +16,6 @@ import com.example.demo.Repository.SpecificationOptionRepository;
 import com.example.demo.Repository.SpecificationRepository;
 import com.example.demo.Repository.SubcategoryRepository;
 import com.example.demo.calculations.CalculationBased;
-import com.example.demo.model.Cart;
-import com.example.demo.model.CartItem;
 import com.example.demo.model.Product;
 import com.example.demo.model.Specification;
 import com.example.demo.model.SpecificationOption;
@@ -25,7 +23,7 @@ import com.example.demo.model.Subcategory;
 
 @Service
 public class ProductService {
-	
+
 	private ProductRepository productRepository;
     private SubcategoryRepository subcategoryRepository;
     private CartRepository cartRepository;
@@ -75,7 +73,7 @@ public class ProductService {
     public void setSpecificationOptionRepository(SpecificationOptionRepository specificationOptionRepository) {
         this.specificationOptionRepository = specificationOptionRepository;
     }
-	
+
 	 private static final Logger log = LoggerFactory.getLogger(ProductService.class);
 
 	// Method to save a new product
@@ -84,7 +82,6 @@ public class ProductService {
 	}
 
 
-	
 	public Double calculateTotalPrice(Long productId, Integer selectedQuantity, List<Long> selectedOptionIds) {
 	    // Fetch the product using the productId
 	    Product product = productRepository.findById(productId)
@@ -92,6 +89,7 @@ public class ProductService {
 
 	    // Generate valid quantity options for the product
 	    List<Integer> validQuantities = calculationBased.generateQuantityOptions(productId);
+	    log.info("Valid Quantities: {}, Selected Quantity: {}", validQuantities, selectedQuantity);
 
 	    // Validate that the selected quantity is valid
 	    if (!validQuantities.contains(selectedQuantity)) {
@@ -108,16 +106,19 @@ public class ProductService {
 	    if (selectedOptionIds != null && !selectedOptionIds.isEmpty()) {
 	        // Fetch all specifications for the product
 	        List<Specification> productSpecifications = specificationRepository.findByProductId(productId);
+	        log.debug("Product Specifications: {}", productSpecifications);
 
 	        // Flatten all specification options linked to this product
 	        List<SpecificationOption> allOptions = productSpecifications.stream()
 	                .flatMap(spec -> spec.getOptions().stream())
 	                .collect(Collectors.toList());
+	        log.debug("All Available Options: {}", allOptions);
 
 	        // Map selected options by their IDs for validation
 	        List<SpecificationOption> selectedOptions = allOptions.stream()
 	                .filter(option -> selectedOptionIds.contains(option.getId()))
 	                .collect(Collectors.toList());
+	        log.debug("Selected Options: {}", selectedOptions);
 
 	        // Validate that only one option is selected per specification
 	        Map<Long, List<SpecificationOption>> groupedBySpec = selectedOptions.stream()
@@ -125,7 +126,7 @@ public class ProductService {
 
 	        for (Map.Entry<Long, List<SpecificationOption>> entry : groupedBySpec.entrySet()) {
 	            if (entry.getValue().size() > 1) {
-	                throw new RuntimeException("Only one option can be selected per specification for specification ID: " + entry.getKey());
+	                throw new RuntimeException("Duplicate options selected for specification ID: " + entry.getKey());
 	            }
 	        }
 
@@ -133,22 +134,77 @@ public class ProductService {
 	        additionalCost = selectedOptions.stream()
 	                .mapToDouble(SpecificationOption::getPrice)
 	                .sum();
-
-	        // Validate: Ensure all selectedOptionIds are valid
-	        if (selectedOptions.size() != selectedOptionIds.size()) {
-	            throw new RuntimeException("One or more selected option IDs are invalid for the given product.");
-	        }
 	    }
 
 	    // Calculate the total price
 	    double totalPrice = (basePrice + additionalCost) * selectedQuantity;
-
-	    // Log the details for debugging
 	    log.info("Product ID: {}, Base Price: {}, Additional Cost: {}, Selected Quantity: {}, Total Price: {}",
 	            productId, basePrice, additionalCost, selectedQuantity, totalPrice);
 
 	    return totalPrice;
 	}
+
+//	public Double calculateTotalPrice(Long productId, Integer selectedQuantity, List<Long> selectedOptionIds) {
+//	    // Fetch the product using the productId
+//	    Product product = productRepository.findById(productId)
+//	            .orElseThrow(() -> new RuntimeException("Product not found with ID: " + productId));
+//
+//	    // Generate valid quantity options for the product
+//	    List<Integer> validQuantities = calculationBased.generateQuantityOptions(productId);
+//
+//	    // Validate that the selected quantity is valid
+//	    if (!validQuantities.contains(selectedQuantity)) {
+//	        throw new RuntimeException("Invalid quantity selected. Valid quantities are: " + validQuantities);
+//	    }
+//
+//	    // Get the base price of the product
+//	    Double basePrice = product.getBaseprice();
+//
+//	    // Initialize the additional cost
+//	    double additionalCost = 0.0;
+//
+//	    // Ensure that selectedOptionIds is not null or empty
+//	    if (selectedOptionIds != null && !selectedOptionIds.isEmpty()) {
+//	        // Fetch all specifications for the product
+//	        List<Specification> productSpecifications = specificationRepository.findByProductId(productId);
+//
+//	        // Flatten all specification options linked to this product
+//	        List<SpecificationOption> allOptions = productSpecifications.stream()
+//	                .flatMap(spec -> spec.getOptions().stream())
+//	                .collect(Collectors.toList());
+//
+//	        // Map selected options by their IDs for validation
+//	        List<SpecificationOption> selectedOptions = allOptions.stream()
+//	                .filter(option -> selectedOptionIds.contains(option.getId()))
+//	                .collect(Collectors.toList());
+//
+//	        // Validate that only one option is selected per specification
+//	        Map<Long, List<SpecificationOption>> groupedBySpec = selectedOptions.stream()
+//	                .collect(Collectors.groupingBy(option -> option.getSpecification().getId()));
+//
+//	        for (Map.Entry<Long, List<SpecificationOption>> entry : groupedBySpec.entrySet()) {
+//	            if (entry.getValue().size() > 1) {
+//	                throw new RuntimeException("Only one option can be selected per specification for specification ID: " + entry.getKey());
+//	            }
+//	        }
+//
+//	        // Calculate the additional cost by summing up the selected options' prices
+//	        additionalCost = selectedOptions.stream()
+//	                .mapToDouble(SpecificationOption::getPrice)
+//	                .sum();
+//
+//
+//	    }
+//
+//	    // Calculate the total price
+//	    double totalPrice = (basePrice + additionalCost) * selectedQuantity;
+//
+//	    // Log the details for debugging
+//	    log.info("Product ID: {}, Base Price: {}, Additional Cost: {}, Selected Quantity: {}, Total Price: {}",
+//	            productId, basePrice, additionalCost, selectedQuantity, totalPrice);
+//
+//	    return totalPrice;
+//	}
 
 
 
@@ -171,27 +227,6 @@ public class ProductService {
 	public Product saveProduct(Product product) {
 		return productRepository.save(product); // Save the product to the database
 	}
-	
-	 // Method to add specification to a product
-//    public Product addSpecificationToProduct(Long productId, Long specificationId, List<SpecificationOption> options) {
-//        // Find the product by ID
-//        Product product = productRepository.findById(productId).orElseThrow(() -> new RuntimeException("Product not found"));
-//
-//        // Find the specification by ID
-//        Specification specification = specificationRepository.findById(specificationId)
-//                .orElseThrow(() -> new RuntimeException("Specification not found"));
-//
-//        // Set the options for the specification
-//        specification.setOptions(options);
-//
-//        // Save the updated specification
-//        specificationRepository.save(specification);
-//
-//        // Add the specification to the product
-//        product.getSpecifications().add(specification);
-//        productRepository.save(product);
-//
-//        return product;
-//    }
+
 
 }

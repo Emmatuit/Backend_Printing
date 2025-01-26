@@ -3,6 +3,7 @@ package com.example.demo.model;
 import java.util.ArrayList;
 import java.util.List;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -10,6 +11,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 
 @Entity
 public class Product { // Updated to "Product" from "Products"
@@ -35,6 +37,19 @@ public class Product { // Updated to "Product" from "Products"
 	@ManyToOne
 	@JoinColumn(name = "category_id")
 	private Category category;
+
+	// Bidirectional relationship with Specification
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Specification> specifications = new ArrayList<>();
+
+    // Getter and Setter for specifications
+    public List<Specification> getSpecifications() {
+        return specifications;
+    }
+
+    public void setSpecifications(List<Specification> specifications) {
+        this.specifications = specifications;
+    }
 
 	// Default constructor
 	public Product() {
