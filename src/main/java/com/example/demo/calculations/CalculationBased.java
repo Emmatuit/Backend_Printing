@@ -19,11 +19,6 @@ public class CalculationBased {
 
 	private ProductService productService;
 
-	 @Autowired
-	    public void setProductService(@Lazy ProductService productService) {
-	        this.productService = productService;
-}
-
 	// Method to generate quantity options for a product
 	public List<Integer> generateQuantityOptions(Long productId) {
 		// Fetch the product using the product ID
@@ -38,6 +33,11 @@ public class CalculationBased {
 			options.add(qty);
 		}
 		return options;
+	}
+
+	@Autowired
+	public void setProductService(@Lazy ProductService productService) {
+		this.productService = productService;
 	}
 
 }

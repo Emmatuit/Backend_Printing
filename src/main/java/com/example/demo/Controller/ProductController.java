@@ -52,7 +52,6 @@ public class ProductController {
 	@Autowired
 	private SubcategoryRepository subcategoryRepository;
 
-
 	@Autowired
 	private ProductService productService;
 
@@ -71,51 +70,48 @@ public class ProductController {
 	@Autowired
 	private ImagekitService imagekitService;
 
-
-	 @PostMapping("/{subcategoryId}/addProduct")
-	 public ResponseEntity<ProductDto> addProductToSubcategory1(
-	     @PathVariable("subcategoryId") Long subcategoryId,
-	     @RequestParam("name") String name,
-	     @RequestParam("description") String description,
-	     @RequestParam("baseprice") Double baseprice,
-	     @RequestParam("minOrderQuantity") Integer minOrderQuantity,
-	     @RequestParam("maxQuantity") Integer maxQuantity,
-	     @RequestParam("incrementStep") Integer incrementStep,
-	     @RequestParam("images") List<MultipartFile> images, // Product images
-	     @RequestParam("specifications") String specificationsJson, // Specifications as JSON
-	     @RequestParam("specImages") List<MultipartFile> specImages // Specification images
-	 ) throws IOException, InternalServerException, BadRequestException, UnknownException, ForbiddenException, TooManyRequestsException, UnauthorizedException {
+	@PostMapping("/{subcategoryId}/addProduct")
+	public ResponseEntity<ProductDto> addProductToSubcategory1(@PathVariable("subcategoryId") Long subcategoryId,
+			@RequestParam("name") String name, @RequestParam("description") String description,
+			@RequestParam("baseprice") Double baseprice, @RequestParam("minOrderQuantity") Integer minOrderQuantity,
+			@RequestParam("maxQuantity") Integer maxQuantity, @RequestParam("incrementStep") Integer incrementStep,
+			@RequestParam("images") List<MultipartFile> images, // Product images
+			@RequestParam("specifications") String specificationsJson, // Specifications as JSON
+			@RequestParam("specImages") List<MultipartFile> specImages // Specification images
+	) throws IOException, InternalServerException, BadRequestException, UnknownException, ForbiddenException,
+			TooManyRequestsException, UnauthorizedException {
 
 		// Validate if subcategory exists
-		    Subcategory subcategory = subcategoryRepository.findById(subcategoryId)
-		            .orElseThrow(() -> new RuntimeException("Subcategory not found"));
+		Subcategory subcategory = subcategoryRepository.findById(subcategoryId)
+				.orElseThrow(() -> new RuntimeException("Subcategory not found"));
 
-		    // Upload product images to ImageKit and collect URLs
-		    List<String> imageUrls = new ArrayList<>();
-		    for (MultipartFile image : images) {
-		        if (!image.isEmpty()) {
-		            String imageUrl = imagekitService.uploadFileToProduct(image); // Call the ImageKit upload method
-		            imageUrls.add(imageUrl); // Add the URL to the list
-		        }
-		    }
+		// Upload product images to ImageKit and collect URLs
+		List<String> imageUrls = new ArrayList<>();
+		for (MultipartFile image : images) {
+			if (!image.isEmpty()) {
+				String imageUrl = imagekitService.uploadFileToProduct(image); // Call the ImageKit upload method
+				imageUrls.add(imageUrl); // Add the URL to the list
+			}
+		}
 
+		// Create and save the product
+		Product product = new Product();
+		product.setName(name);
+		product.setDescription(description);
+		product.setBaseprice(baseprice);
+		product.setMinOrderquantity(minOrderQuantity);
+		product.setMaxQuantity(maxQuantity);
+		product.setIncrementStep(incrementStep);
+		product.setEncryptedImages(imageUrls); // Store the paths to the images
+		product.setSubcategory(subcategory); // Link product to subcategory
+		product.setCategory(subcategory.getCategory()); // Set the category
+		product = productService.saveProduct(product);
 
-	     // Create and save the product
-	     Product product = new Product();
-	     product.setName(name);
-	     product.setDescription(description);
-	     product.setBaseprice(baseprice);
-	     product.setMinOrderquantity(minOrderQuantity);
-	     product.setMaxQuantity(maxQuantity);
-	     product.setIncrementStep(incrementStep);
-	     product.setEncryptedImages(imageUrls); // Store the paths to the images
-	     product.setSubcategory(subcategory); // Link product to subcategory
-	     product.setCategory(subcategory.getCategory()); // Set the category
-	     product = productService.saveProduct(product);
-
-	     // Parse and save specifications
-	     ObjectMapper mapper = new ObjectMapper();
-	     List<SpecificationDTO> specifications = mapper.readValue(specificationsJson, new TypeReference<List<SpecificationDTO>>() {});
+		// Parse and save specifications
+		ObjectMapper mapper = new ObjectMapper();
+		List<SpecificationDTO> specifications = mapper.readValue(specificationsJson,
+				new TypeReference<List<SpecificationDTO>>() {
+				});
 
 //	     for (SpecificationDTO specDto : specifications) {
 //	         Specification specification = new Specification();
@@ -146,140 +142,140 @@ public class ProductController {
 //	             // Increment optionIndex to handle next specification image
 //	             optionIndex++;
 //	         }
-	     for (SpecificationDTO specDto : specifications) {
-	    	    Specification specification = new Specification();
-	    	    specification.setName(specDto.getName());
-	    	    specification.setProduct(product);
-	    	    specification = specificationService.saveSpecification(specification);
+		for (SpecificationDTO specDto : specifications) {
+			Specification specification = new Specification();
+			specification.setName(specDto.getName());
+			specification.setProduct(product);
+			specification = specificationService.saveSpecification(specification);
 
-	    	    int optionIndex = 0; // Reset for each specification
+			int optionIndex = 0; // Reset for each specification
 
-	    	    for (SpecificationOptionDTO optionDto : specDto.getOptions()) {
-	    	        SpecificationOption option = new SpecificationOption();
-	    	        option.setName(optionDto.getName());
-	    	        option.setPrice(optionDto.getPrice());
+			for (SpecificationOptionDTO optionDto : specDto.getOptions()) {
+				SpecificationOption option = new SpecificationOption();
+				option.setName(optionDto.getName());
+				option.setPrice(optionDto.getPrice());
 
-	    	        if (optionIndex < specImages.size()) {
-	    	            MultipartFile specImage = specImages.get(optionIndex);
-	    	            if (specImage != null && !specImage.isEmpty()) {
-	    	                String specImageUrl = imagekitService.uploadSpecificationImageFile(specImage);
-	    	                option.setImage(specImageUrl);
-	    	            }
-	    	        }
-	    	        option.setSpecification(specification);
-	    	        specificationOptionService.saveSpecificationOption(option);
-	    	        optionIndex++; // Increment after saving the option
-	    	    }
+				if (optionIndex < specImages.size()) {
+					MultipartFile specImage = specImages.get(optionIndex);
+					if (specImage != null && !specImage.isEmpty()) {
+						String specImageUrl = imagekitService.uploadSpecificationImageFile(specImage);
+						option.setImage(specImageUrl);
+					}
+				}
+				option.setSpecification(specification);
+				specificationOptionService.saveSpecificationOption(option);
+				optionIndex++; // Increment after saving the option
+			}
 
-	     }
+		}
 
-	     // Create and return ProductDto
-	     ProductDto productDto = new ProductDto();
-	     productDto.setId(product.getId());
-	     productDto.setName(product.getName());
-	     productDto.setDescription(product.getDescription());
-	     productDto.setBasePrice(product.getBaseprice());
-	     productDto.setMinOrderQuantity(product.getMinOrderquantity());
-	     productDto.setMaxQuantity(product.getMaxQuantity());
-	     productDto.setIncrementStep(product.getIncrementStep());
-	     productDto.setEncryptedImages(product.getEncryptedImages());
-	     productDto.setSubcategoryId(product.getSubcategory().getId());
-	     productDto.setCategoryId(product.getCategory().getId());
+		// Create and return ProductDto
+		ProductDto productDto = new ProductDto();
+		productDto.setId(product.getId());
+		productDto.setName(product.getName());
+		productDto.setDescription(product.getDescription());
+		productDto.setBasePrice(product.getBaseprice());
+		productDto.setMinOrderQuantity(product.getMinOrderquantity());
+		productDto.setMaxQuantity(product.getMaxQuantity());
+		productDto.setIncrementStep(product.getIncrementStep());
+		productDto.setEncryptedImages(product.getEncryptedImages());
+		productDto.setSubcategoryId(product.getSubcategory().getId());
+		productDto.setCategoryId(product.getCategory().getId());
 
-	     // Fetch the specifications associated with the product
-	     List<Specification> specifications1 = specificationService.getSpecificationsByProduct(product);
-	     List<SpecificationDTO> specificationDtos = new ArrayList<>();
-	     for (Specification specification : specifications1) {
-	         SpecificationDTO specDto = new SpecificationDTO();
-	         specDto.setId(specification.getId());
-	         specDto.setName(specification.getName());
+		// Fetch the specifications associated with the product
+		List<Specification> specifications1 = specificationService.getSpecificationsByProduct(product);
+		List<SpecificationDTO> specificationDtos = new ArrayList<>();
+		for (Specification specification : specifications1) {
+			SpecificationDTO specDto = new SpecificationDTO();
+			specDto.setId(specification.getId());
+			specDto.setName(specification.getName());
 
-	         // Fetch the options for this specification
-	         List<SpecificationOption> options = specificationOptionService.getSpecificationOptionsBySpecification(specification);
-	         List<SpecificationOptionDTO> optionDtos = new ArrayList<>();
-	         for (SpecificationOption option : options) {
-	             SpecificationOptionDTO optionDto = new SpecificationOptionDTO();
-	             optionDto.setId(option.getId());
-	             optionDto.setName(option.getName());
-	             optionDto.setPrice(option.getPrice());
-	             optionDto.setImage(option.getImage()); // Set the image path if any
-	             optionDtos.add(optionDto);
-	         }
-	         specDto.setOptions(optionDtos);
-	         specificationDtos.add(specDto);
-	     }
+			// Fetch the options for this specification
+			List<SpecificationOption> options = specificationOptionService
+					.getSpecificationOptionsBySpecification(specification);
+			List<SpecificationOptionDTO> optionDtos = new ArrayList<>();
+			for (SpecificationOption option : options) {
+				SpecificationOptionDTO optionDto = new SpecificationOptionDTO();
+				optionDto.setId(option.getId());
+				optionDto.setName(option.getName());
+				optionDto.setPrice(option.getPrice());
+				optionDto.setImage(option.getImage()); // Set the image path if any
+				optionDtos.add(optionDto);
+			}
+			specDto.setOptions(optionDtos);
+			specificationDtos.add(specDto);
+		}
 
-	     // Set the specifications in the productDto
-	     productDto.setSpecifications(specificationDtos);
+		// Set the specifications in the productDto
+		productDto.setSpecifications(specificationDtos);
 
-	     return new ResponseEntity<>(productDto, HttpStatus.CREATED);
-	 }
+		return new ResponseEntity<>(productDto, HttpStatus.CREATED);
+	}
 
+	// ================================================//
+	@PostMapping("/calculateTotalPrice")
+	public ResponseEntity<Double> calculateTotalPrice(@RequestParam("productId") Long productId,
+			@RequestParam("selectedQuantity") Integer selectedQuantity,
+			@RequestBody List<Long> selectedSpecificationIds) {
+		try {
+			// Call the service to calculate the total price
+			Double totalPrice = productService.calculateTotalPrice(productId, selectedQuantity,
+					selectedSpecificationIds);
 
-	 @GetMapping("/RetrieveProduct/{productId}")
-	 public ResponseEntity<ProductDto> getProductById(@PathVariable("productId") Long productId) {
-	     Product product = productService.getProductById(productId);
+			// Return the calculated total price
+			return ResponseEntity.ok(totalPrice);
+		} catch (RuntimeException e) {
+			// Handle errors and return a bad request with the error message
+			return ResponseEntity.badRequest().body(null);
+		}
+	}
 
-	     if (product == null) {
-	         return ResponseEntity.notFound().build();
-	     }
+	@GetMapping("/RetrieveProduct/{productId}")
+	public ResponseEntity<ProductDto> getProductById(@PathVariable("productId") Long productId) {
+		Product product = productService.getProductById(productId);
 
-	     // Convert to ProductDto for response
-	     ProductDto productDto = new ProductDto();
-	     productDto.setId(product.getId());
-	     productDto.setName(product.getName());
-	     productDto.setDescription(product.getDescription());
-	     productDto.setBasePrice(product.getBaseprice());
-	     productDto.setMinOrderQuantity(product.getMinOrderquantity());
-	     productDto.setMaxQuantity(product.getMaxQuantity());
-	     productDto.setIncrementStep(product.getIncrementStep());
-	     productDto.setEncryptedImages(product.getEncryptedImages());
-	     productDto.setSubcategoryId(product.getSubcategory().getId());
-	     productDto.setCategoryId(product.getCategory().getId());
+		if (product == null) {
+			return ResponseEntity.notFound().build();
+		}
 
-	     // Fetch specifications using a service or repository that queries the Specification table
-	     List<Specification> specifications = specificationRepository.findByProductId(productId);
+		// Convert to ProductDto for response
+		ProductDto productDto = new ProductDto();
+		productDto.setId(product.getId());
+		productDto.setName(product.getName());
+		productDto.setDescription(product.getDescription());
+		productDto.setBasePrice(product.getBaseprice());
+		productDto.setMinOrderQuantity(product.getMinOrderquantity());
+		productDto.setMaxQuantity(product.getMaxQuantity());
+		productDto.setIncrementStep(product.getIncrementStep());
+		productDto.setEncryptedImages(product.getEncryptedImages());
+		productDto.setSubcategoryId(product.getSubcategory().getId());
+		productDto.setCategoryId(product.getCategory().getId());
 
-	     // Map specifications and their options
-	     List<SpecificationDTO> specificationDtos = specifications.stream().map(spec -> {
-	         SpecificationDTO specDto = new SpecificationDTO();
-	         specDto.setId(spec.getId());
-	         specDto.setName(spec.getName());
-	         specDto.setOptions(spec.getOptions().stream().map(option -> {
-	             SpecificationOptionDTO optionDto = new SpecificationOptionDTO();
-	             optionDto.setId(option.getId());
-	             optionDto.setName(option.getName());
-	             optionDto.setPrice(option.getPrice());
-	             optionDto.setImage(option.getImage());
-	             return optionDto;
-	         }).collect(Collectors.toList()));
-	         return specDto;
-	     }).collect(Collectors.toList());
+		// Fetch specifications using a service or repository that queries the
+		// Specification table
+		List<Specification> specifications = specificationRepository.findByProductId(productId);
 
-	     productDto.setSpecifications(specificationDtos);
-	     return ResponseEntity.ok(productDto);
-	 }
+		// Map specifications and their options
+		List<SpecificationDTO> specificationDtos = specifications.stream().map(spec -> {
+			SpecificationDTO specDto = new SpecificationDTO();
+			specDto.setId(spec.getId());
+			specDto.setName(spec.getName());
+			specDto.setOptions(spec.getOptions().stream().map(option -> {
+				SpecificationOptionDTO optionDto = new SpecificationOptionDTO();
+				optionDto.setId(option.getId());
+				optionDto.setName(option.getName());
+				optionDto.setPrice(option.getPrice());
+				optionDto.setImage(option.getImage());
+				return optionDto;
+			}).collect(Collectors.toList()));
+			return specDto;
+		}).collect(Collectors.toList());
 
-	 //================================================//
-	 @PostMapping("/calculateTotalPrice")
-	    public ResponseEntity<Double> calculateTotalPrice(
-	            @RequestParam("productId") Long productId,
-	            @RequestParam("selectedQuantity") Integer selectedQuantity,
-	            @RequestBody List<Long> selectedSpecificationIds) {
-	        try {
-	            // Call the service to calculate the total price
-	            Double totalPrice = productService.calculateTotalPrice(productId, selectedQuantity, selectedSpecificationIds);
+		productDto.setSpecifications(specificationDtos);
+		return ResponseEntity.ok(productDto);
+	}
 
-	            // Return the calculated total price
-	            return ResponseEntity.ok(totalPrice);
-	        } catch (RuntimeException e) {
-	            // Handle errors and return a bad request with the error message
-	            return ResponseEntity.badRequest().body(null);
-	        }
-	    }
-
-
-	//Display product based on sub-category
+	// Display product based on sub-category
 	@GetMapping("/{categoryId}/subcategories/{subcategoryId}/products")
 	public ResponseEntity<?> getProductsBySubcategoryAndCategory(@PathVariable("categoryId") Long categoryId,
 			@PathVariable("subcategoryId") Long subcategoryId) {
@@ -293,8 +289,5 @@ public class ProductController {
 			return ResponseEntity.status(404).body(e.getMessage());
 		}
 	}
-
-
-
 
 }

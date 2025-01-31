@@ -1,54 +1,52 @@
 package com.example.demo.Dto;
 
-
 public class SpecificationOptionDTO {
 
-    private Long id;
-    private String name;  // e.g., "Red", "Blue", "Small", "Large"
-    private String image; // Image URL or path
-    private Double price; // Additional price for this option
+	private Long id;
+	private String name; // e.g., "Red", "Blue", "Small", "Large"
+	private String image; // Image URL or path
+	private Double price; // Additional price for this option
 
-    // Default constructor
-    public SpecificationOptionDTO() {}
+	public SpecificationOptionDTO() {
+	}
 
-    // Constructor with parameters
-    public SpecificationOptionDTO(Long id, String name, String image, Double price) {
-        this.id = id;
-        this.name = name;
-        this.image = image;
-        this.price = price;
-    }
+	public SpecificationOptionDTO(Long id, String name, Double price, String image) {
+		this.id = id;
+		this.name = name;
+		this.image = image;
+		this.price = price;
+	}
 
-    // Getters and Setters
-    public Long getId() {
-        return id;
-    }
+	// Getters and Setters
+	public Long getId() {
+		return id;
+	}
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+	public String getImage() {
+		return image;
+	}
 
-    public String getName() {
-        return name;
-    }
+	public String getName() {
+		return name;
+	}
 
-    public void setName(String name) {
-        this.name = name;
-    }
+	public Double getPrice() {
+		return price;
+	}
 
-    public String getImage() {
-        return image;
-    }
+	public void setId(Long id) {
+		this.id = id;
+	}
 
-    public void setImage(String image) {
-        this.image = image;
-    }
+	public void setImage(String image) {
+		this.image = image;
+	}
 
-    public Double getPrice() {
-        return price;
-    }
+	public void setName(String name) {
+		this.name = name;
+	}
 
-    public void setPrice(Double price) {
-        this.price = price;
-    }
+	public void setPrice(Double price) {
+		this.price = price;
+	}
 }

@@ -17,6 +17,8 @@ import org.springframework.web.multipart.MultipartFile;
 import com.example.demo.Dto.CategoryDto;
 import com.example.demo.Dto.CategorySubcategoryProductDto;
 import com.example.demo.Dto.ProductDto;
+import com.example.demo.Dto.SpecificationDTO;
+import com.example.demo.Dto.SpecificationOptionDTO;
 import com.example.demo.Dto.SubcategoryDto;
 import com.example.demo.Imagekit.ImagekitService;
 import com.example.demo.Repository.CategoryRepository;
@@ -24,6 +26,8 @@ import com.example.demo.Repository.ProductRepository;
 import com.example.demo.Repository.SubcategoryRepository;
 import com.example.demo.model.Category;
 import com.example.demo.model.Product;
+import com.example.demo.model.Specification;
+import com.example.demo.model.SpecificationOption;
 import com.example.demo.model.Subcategory;
 
 import io.imagekit.sdk.exceptions.BadRequestException;
@@ -48,112 +52,180 @@ public class CategoryService {
 	@Autowired
 	private ImagekitService imagekitService;
 
-	public Category addCategory(Category category)
-	        throws InternalServerException, BadRequestException, UnknownException, ForbiddenException, TooManyRequestsException, UnauthorizedException {
-	    // Check if a category with the same name already exists
-	    if (categoryRepository.existsByName(category.getName())) {
-	        throw new IllegalArgumentException("Category with this name already exists");
-	    }
+	public Category addCategory(Category category) throws InternalServerException, BadRequestException,
+			UnknownException, ForbiddenException, TooManyRequestsException, UnauthorizedException {
+		// Check if a category with the same name already exists
+		if (categoryRepository.existsByName(category.getName())) {
+			throw new IllegalArgumentException("Category with this name already exists");
+		}
 
-	    // If the category has an image URL, fetch it and convert it into a MultipartFile
-	    if (category.getEncryptedImage() != null && !category.getEncryptedImage().isEmpty()) {
-	        try {
-	            URL url = new URL(category.getEncryptedImage());
-	            InputStream inputStream = url.openStream();
+		// If the category has an image URL, fetch it and convert it into a
+		// MultipartFile
+		if (category.getEncryptedImage() != null && !category.getEncryptedImage().isEmpty()) {
+			try {
+				URL url = new URL(category.getEncryptedImage());
+				InputStream inputStream = url.openStream();
 
-	            // Convert InputStream to byte array
-	            byte[] imageBytes = inputStream.readAllBytes(); // Java 9+
-	            inputStream.close();
+				// Convert InputStream to byte array
+				byte[] imageBytes = inputStream.readAllBytes(); // Java 9+
+				inputStream.close();
 
-	            // Create a MultipartFile using a helper method
-	            MultipartFile multipartFile = createMultipartFileFromBytes(imageBytes, "image.jpg", "image/jpeg");
+				// Create a MultipartFile using a helper method
+				MultipartFile multipartFile = createMultipartFileFromBytes(imageBytes, "image.jpg", "image/jpeg");
 
-	            // Upload the file to ImageKit
-	            String fullUrl = imagekitService.uploadFile(multipartFile);
-	            category.setEncryptedImage(fullUrl); // Save the full URL
+				// Upload the file to ImageKit
+				String fullUrl = imagekitService.uploadFile(multipartFile);
+				category.setEncryptedImage(fullUrl); // Save the full URL
 
-	        } catch (IOException e) {
-	            throw new RuntimeException("Failed to fetch image from URL and upload", e);
-	        }
-	    }
+			} catch (IOException e) {
+				throw new RuntimeException("Failed to fetch image from URL and upload", e);
+			}
+		}
 
-	    // Save the category in the database
-	    return categoryRepository.save(category);
+		// Save the category in the database
+		return categoryRepository.save(category);
 	}
 
-	// Helper method to create a MultipartFile from bytes
-	private MultipartFile createMultipartFileFromBytes(byte[] bytes, String fileName, String contentType) {
-	    return new MultipartFile() {
-	        @Override
-	        public String getName() {
-	            return "file";
-	        }
-
-	        @Override
-	        public String getOriginalFilename() {
-	            return fileName;
-	        }
-
-	        @Override
-	        public String getContentType() {
-	            return contentType;
-	        }
-
-	        @Override
-	        public boolean isEmpty() {
-	            return bytes.length == 0;
-	        }
-
-	        @Override
-	        public long getSize() {
-	            return bytes.length;
-	        }
-
-	        @Override
-	        public byte[] getBytes() throws IOException {
-	            return bytes;
-	        }
-
-	        @Override
-	        public InputStream getInputStream() throws IOException {
-	            return new ByteArrayInputStream(bytes);
-	        }
-
-	        @Override
-	        public void transferTo(java.io.File dest) throws IOException, IllegalStateException {
-	            Files.write(dest.toPath(), bytes);
-	        }
-	    };
-	}
-
+//	private CategoryDto convertToCategoryDto(Category category) {
+//		List<SubcategoryDto> subcategoryDtos = category.getSubcategories().stream().map(this::convertToSubcategoryDto)
+//				.collect(Collectors.toList());
+//
+//		// Use the existing encrypted image URL directly
+//		String imageUrl = category.getEncryptedImage();
+//
+//		return new CategoryDto(category.getId(), category.getName(), category.getDescription(), imageUrl,
+//				subcategoryDtos);
+//	}
 
 	// Helper method to convert a Category entity to CategoryDto, including
 	// subcategories
 
-
 	// Helper method to convert a Product entity to ProductDto
-	private ProductDto convertToProductDto(Product product) {
-
-		// Create and return the ProductDto
-		return new ProductDto(product.getId(), product.getName(), product.getDescription(), product.getBaseprice(),
-				product.getMinOrderquantity(), product.getMaxQuantity(), product.getIncrementStep(),
-				product.getSubcategory().getId(), product.getCategory().getId(), product.getEncryptedImages()
-
-		);
-	}
-
+//	private ProductDto convertToProductDto(Product product) {
+//
+//		// Create and return the ProductDto
+//		return new ProductDto(product.getId(), product.getName(), product.getDescription(), product.getBaseprice(),
+//				product.getMinOrderquantity(), product.getMaxQuantity(), product.getIncrementStep(),
+//				product.getSubcategory().getId(), product.getCategory().getId(), product.getEncryptedImages()
+//
+//		);
+//	}
 
 	// Helper method to convert a Subcategory entity to SubcategoryDto, including
 	// products
+//	private SubcategoryDto convertToSubcategoryDto(Subcategory subcategory) {
+//		// Convert the list of products to ProductDto (if necessary)
+//		List<ProductDto> productDtos = subcategory.getProducts() != null
+//				? subcategory.getProducts().stream().map(this::convertToProductDto).collect(Collectors.toList())
+//				: Collections.emptyList();
+//
+//		// Create and return the SubcategoryDto
+//		return new SubcategoryDto(subcategory.getId(), subcategory.getName(), productDtos,
+//				subcategory.getCategory().getId());
+//	}
+
+	// ✅ Convert Category -> CategoryDto (Including Subcategories)
+	private CategoryDto convertToCategoryDto(Category category) {
+		List<SubcategoryDto> subcategoryDtos = category.getSubcategories() != null
+				? category.getSubcategories().stream().map(this::convertToSubcategoryDto).collect(Collectors.toList())
+				: Collections.emptyList(); // Prevent null issues
+
+		return new CategoryDto(category.getId(), category.getName(), category.getDescription(),
+				category.getEncryptedImage(), // Image URL
+				subcategoryDtos);
+	}
+
+	// ✅ Convert Product -> ProductDto
+	private ProductDto convertToProductDto(Product product) {
+		List<SpecificationDTO> specificationDTOs = product.getSpecifications() != null
+				? product.getSpecifications().stream().map(this::convertToSpecificationDto).collect(Collectors.toList())
+				: Collections.emptyList(); // Prevent null issues
+
+		return new ProductDto(product.getId(), product.getName(), product.getDescription(), product.getBaseprice(),
+				product.getMinOrderquantity(), product.getMaxQuantity(), product.getIncrementStep(),
+				product.getSubcategory() != null ? product.getSubcategory().getId() : null, // Prevent null issues
+				product.getCategory() != null ? product.getCategory().getId() : null, // Prevent null issues
+				product.getEncryptedImages(), specificationDTOs // ✅ Include specifications
+		);
+	}
+
+	// ✅ Convert Specification -> SpecificationDTO
+	private SpecificationDTO convertToSpecificationDto(Specification specification) {
+		List<SpecificationOptionDTO> optionDTOs = specification.getOptions() != null ? specification.getOptions()
+				.stream().map(this::convertToSpecificationOptionDto).collect(Collectors.toList())
+				: Collections.emptyList(); // Prevent null issues
+
+		return new SpecificationDTO(specification.getId(), specification.getName(), optionDTOs // ✅ Include options
+		);
+	}
+
+//	public List<CategoryDto> getAllCategories() {
+//		// Fetch all categories from the repository
+//		List<Category> categories = categoryRepository.findAll();
+//
+//		// Convert each Category entity to CategoryDto and return the list
+//		return categories.stream().map(this::convertToCategoryDto).collect(Collectors.toList());
+//	}
+
+	// ✅ Convert SpecificationOption -> SpecificationOptionDTO
+	private SpecificationOptionDTO convertToSpecificationOptionDto(SpecificationOption option) {
+		return new SpecificationOptionDTO(option.getId(), option.getName(), option.getPrice(), option.getImage());
+	}
+
+	// ✅ Convert Subcategory -> SubcategoryDto (Including Products)
 	private SubcategoryDto convertToSubcategoryDto(Subcategory subcategory) {
-		// Convert the list of products to ProductDto (if necessary)
 		List<ProductDto> productDtos = subcategory.getProducts() != null
 				? subcategory.getProducts().stream().map(this::convertToProductDto).collect(Collectors.toList())
-				: Collections.emptyList();
+				: Collections.emptyList(); // Prevent null issues
 
-		// Create and return the SubcategoryDto
 		return new SubcategoryDto(subcategory.getId(), subcategory.getName(), productDtos,
-				subcategory.getCategory().getId());
+				subcategory.getCategory() != null ? subcategory.getCategory().getId() : null // Prevent null issues
+		);
+	}
+
+	// Helper method to create a MultipartFile from bytes
+	private MultipartFile createMultipartFileFromBytes(byte[] bytes, String fileName, String contentType) {
+		return new MultipartFile() {
+			@Override
+			public byte[] getBytes() throws IOException {
+				return bytes;
+			}
+
+			@Override
+			public String getContentType() {
+				return contentType;
+			}
+
+			@Override
+			public InputStream getInputStream() throws IOException {
+				return new ByteArrayInputStream(bytes);
+			}
+
+			@Override
+			public String getName() {
+				return "file";
+			}
+
+			@Override
+			public String getOriginalFilename() {
+				return fileName;
+			}
+
+			@Override
+			public long getSize() {
+				return bytes.length;
+			}
+
+			@Override
+			public boolean isEmpty() {
+				return bytes.length == 0;
+			}
+
+			@Override
+			public void transferTo(java.io.File dest) throws IOException, IllegalStateException {
+				Files.write(dest.toPath(), bytes);
+			}
+		};
 	}
 
 	public void deleteCategory(Long categoryId) {
@@ -188,8 +260,15 @@ public class CategoryService {
 		}
 	}
 
+	public List<CategoryDto> getAllCategories() {
+		List<Category> categories = categoryRepository.findAll();
+		if (categories.isEmpty()) {
+			return Collections.emptyList(); // ✅ Returns [] instead of null
+		}
+		return categories.stream().map(this::convertToCategoryDto).collect(Collectors.toList());
+	}
 
-
+	// Helper method to convert a Specification entity to SpecificationDto
 	public Category getCategoryById(Long id) {
 		return categoryRepository.findById(id).orElseThrow(() -> new RuntimeException("Category not found"));
 	}
@@ -205,8 +284,6 @@ public class CategoryService {
 		// Map products to ProductDto to avoid nesting
 		return products.stream().map(this::convertToProductDto).collect(Collectors.toList());
 	}
-
-	// Helper method to convert a Specification entity to SpecificationDto
 
 	public List<Product> getProductsBySubcategoryId(Long subcategoryId) {
 		return productRepository.findBySubcategoryId(subcategoryId);
@@ -237,26 +314,6 @@ public class CategoryService {
 	public boolean isCategoryNameDuplicate(String categoryName) {
 		// Check if a category with the same name already exists
 		return categoryRepository.existsByName(categoryName);
-	}
-
-	public List<CategoryDto> getAllCategories() {
-	    // Fetch all categories from the repository
-	    List<Category> categories = categoryRepository.findAll();
-
-	    // Convert each Category entity to CategoryDto and return the list
-	    return categories.stream().map(this::convertToCategoryDto).collect(Collectors.toList());
-	}
-
-	private CategoryDto convertToCategoryDto(Category category) {
-	    List<SubcategoryDto> subcategoryDtos = category.getSubcategories().stream()
-	            .map(this::convertToSubcategoryDto)
-	            .collect(Collectors.toList());
-
-	    // Use the existing encrypted image URL directly
-	    String imageUrl = category.getEncryptedImage();
-
-	    return new CategoryDto(category.getId(), category.getName(), category.getDescription(),
-	                           imageUrl, subcategoryDtos);
 	}
 
 }

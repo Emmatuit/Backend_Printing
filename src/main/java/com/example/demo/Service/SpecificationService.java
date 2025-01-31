@@ -1,6 +1,5 @@
 package com.example.demo.Service;
 
-
 import java.util.List;
 import java.util.Optional;
 
@@ -18,45 +17,39 @@ import jakarta.transaction.Transactional;
 @Service
 public class SpecificationService {
 
-    @Autowired
-    private SpecificationRepository specificationRepository;
+	@Autowired
+	private SpecificationRepository specificationRepository;
 
+	@Autowired
+	private SpecificationOptionRepository specificationOptionRepository;
 
+	public void deleteSpecification(Long id) {
+		specificationRepository.deleteById(id);
+	}
 
-    @Autowired
-    private SpecificationOptionRepository specificationOptionRepository;
+	public List<Specification> getAllSpecifications() {
+		return specificationRepository.findAll();
+	}
 
+	public Optional<Specification> getSpecificationById(Long id) {
+		return specificationRepository.findById(id);
+	}
 
-    public Specification saveSpecification(Specification specification) {
-        Specification savedSpecification = specificationRepository.save(specification);
+	@Transactional
+	public List<Specification> getSpecificationsByProduct(Product product) {
+		return specificationRepository.findByProduct(product);
+	}
 
-        if (specification.getOptions() != null) { // Add null check
-            for (SpecificationOption option : specification.getOptions()) {
-                option.setSpecification(savedSpecification);
-                specificationOptionRepository.save(option);
-            }
-        }
+	public Specification saveSpecification(Specification specification) {
+		Specification savedSpecification = specificationRepository.save(specification);
 
-        return savedSpecification;
-    }
+		if (specification.getOptions() != null) { // Add null check
+			for (SpecificationOption option : specification.getOptions()) {
+				option.setSpecification(savedSpecification);
+				specificationOptionRepository.save(option);
+			}
+		}
 
-
-    public Optional<Specification> getSpecificationById(Long id) {
-        return specificationRepository.findById(id);
-    }
-
-
-    public List<Specification> getAllSpecifications() {
-        return specificationRepository.findAll();
-    }
-
-    public void deleteSpecification(Long id) {
-        specificationRepository.deleteById(id);
-    }
-
-
-    @Transactional
-    public List<Specification> getSpecificationsByProduct(Product product) {
-        return specificationRepository.findByProduct(product);
-    }
+		return savedSpecification;
+	}
 }

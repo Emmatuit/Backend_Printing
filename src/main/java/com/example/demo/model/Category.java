@@ -25,7 +25,7 @@ public class Category {
 	// Store the encrypted image as a string
 	private String encryptedImage; // To store the encrypted image
 
-	@OneToMany(mappedBy = "category", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+	@OneToMany(mappedBy = "category", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
 	@JsonManagedReference // Manage reference here
 	private List<Subcategory> subcategories = new ArrayList<>(); // Relationship with subcategories
 
@@ -33,12 +33,13 @@ public class Category {
 	public Category() {
 	}
 
-	// Constructor with parameters
-	public Category(Long id, String name, String description, String encryptedImage) {
+	public Category(Long id, String name, String description, String encryptedImage, List<Subcategory> subcategories) {
+		super();
 		this.id = id;
 		this.name = name;
 		this.description = description;
 		this.encryptedImage = encryptedImage;
+		this.subcategories = subcategories;
 	}
 
 	public String getDescription() {

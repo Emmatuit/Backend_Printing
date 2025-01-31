@@ -38,18 +38,8 @@ public class Product { // Updated to "Product" from "Products"
 	@JoinColumn(name = "category_id")
 	private Category category;
 
-	// Bidirectional relationship with Specification
-    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Specification> specifications = new ArrayList<>();
-
-    // Getter and Setter for specifications
-    public List<Specification> getSpecifications() {
-        return specifications;
-    }
-
-    public void setSpecifications(List<Specification> specifications) {
-        this.specifications = specifications;
-    }
+	@OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+	private List<Specification> specifications = new ArrayList<>();
 
 	// Default constructor
 	public Product() {
@@ -108,6 +98,11 @@ public class Product { // Updated to "Product" from "Products"
 		return name;
 	}
 
+	// Getter and Setter for specifications
+	public List<Specification> getSpecifications() {
+		return specifications;
+	}
+
 	public Subcategory getSubcategory() {
 		return subcategory;
 	}
@@ -147,6 +142,10 @@ public class Product { // Updated to "Product" from "Products"
 
 	public void setName(String name) {
 		this.name = name;
+	}
+
+	public void setSpecifications(List<Specification> specifications) {
+		this.specifications = specifications;
 	}
 
 	public void setSubcategory(Subcategory subcategory) {

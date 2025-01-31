@@ -67,7 +67,8 @@ public class SubcategoryController {
 
 	// API to get all subcategories and products by category ID
 	@GetMapping("/{categoryId}/subcategories-products")
-	public ResponseEntity<CategorySubcategoryProductDto> getSubcategoriesAndProducts(@PathVariable("categoryId") Long categoryId) {
+	public ResponseEntity<CategorySubcategoryProductDto> getSubcategoriesAndProducts(
+			@PathVariable("categoryId") Long categoryId) {
 		CategorySubcategoryProductDto response = categoryService.getSubcategoriesAndProductsByCategoryId(categoryId);
 		return ResponseEntity.ok(response);
 	}

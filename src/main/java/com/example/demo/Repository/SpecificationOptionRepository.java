@@ -12,8 +12,8 @@ import com.example.demo.model.SpecificationOption;
 @Repository
 public interface SpecificationOptionRepository extends JpaRepository<SpecificationOption, Long> {
 
-	 @Override
+	@Override
 	Optional<SpecificationOption> findById(Long id);
 
-	 List<SpecificationOption> findBySpecification(Specification specification);
+	List<SpecificationOption> findBySpecification(Specification specification);
 }

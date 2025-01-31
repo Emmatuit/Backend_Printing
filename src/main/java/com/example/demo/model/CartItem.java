@@ -1,10 +1,9 @@
 package com.example.demo.model;
 
-import java.util.ArrayList;
 import java.util.List;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
-import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -12,6 +11,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
 @Entity
@@ -22,68 +22,58 @@ public class CartItem {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@Column(nullable = false)
-	private Long productId;
+	@ManyToOne(fetch = FetchType.LAZY, optional = false)
+	@JoinColumn(name = "product_id", nullable = false)
+	private Product product;
 
 	@Column(nullable = false)
-	private Integer quantity;
+	private int selectedQuantity;
 
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "cart_id")
-	private Cart cart; // Relationship to the Cart
+	@JoinColumn(name = "cart_id", nullable = false)
+	private Cart cart; // Ensuring cart_id is always required for cart items
 
 	@Column(nullable = false)
-	private Double price;
+	private double totalPrice;
 
+	@OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+	@JoinColumn(name = "cart_item_id")
+	private List<SpecificationOption> selectedOptions;
 
-    @ElementCollection
-    private List<Long> selectedOptionIds = new ArrayList<>(); // Store selected option IDs
-
-
-	public List<Long> getSelectedOptionIds() {
-		return selectedOptionIds;
-	}
-
-	public void setSelectedOptionIds(List<Long> selectedOptionIds) {
-		this.selectedOptionIds = selectedOptionIds;
-	}
-
-	// Constructors, getters, and setters
 	public CartItem() {
 	}
 
-
-
-	public CartItem(Long id, Long productId, Integer quantity, Cart cart, Double price, List<Long> selectedOptionIds) {
-		super();
-		this.id = id;
-		this.productId = productId;
-		this.quantity = quantity;
-		this.cart = cart;
-		this.price = price;
-		this.selectedOptionIds = selectedOptionIds;
+	public CartItem(Product product, int selectedQuantity, double totalPrice,
+			List<SpecificationOption> selectedOptions) {
+		this.product = product;
+		this.selectedQuantity = selectedQuantity;
+		this.totalPrice = totalPrice;
+		this.selectedOptions = selectedOptions;
 	}
-
-	// Other getters and setters...
 
 	public Cart getCart() {
 		return cart;
 	}
 
+	// Getters and Setters
 	public Long getId() {
 		return id;
 	}
 
-	public Double getPrice() {
-		return price;
+	public Product getProduct() {
+		return product;
 	}
 
-	public Long getProductId() {
-		return productId;
+	public List<SpecificationOption> getSelectedOptions() {
+		return selectedOptions;
 	}
 
-	public Integer getQuantity() {
-		return quantity;
+	public int getSelectedQuantity() {
+		return selectedQuantity;
+	}
+
+	public double getTotalPrice() {
+		return totalPrice;
 	}
 
 	public void setCart(Cart cart) {
@@ -94,16 +84,19 @@ public class CartItem {
 		this.id = id;
 	}
 
-	public void setPrice(Double price) {
-		this.price = price;
+	public void setProduct(Product product) {
+		this.product = product;
 	}
 
-	public void setProductId(Long productId) {
-		this.productId = productId;
+	public void setSelectedOptions(List<SpecificationOption> selectedOptions) {
+		this.selectedOptions = selectedOptions;
 	}
 
-	public void setQuantity(Integer quantity) {
-		this.quantity = quantity;
+	public void setSelectedQuantity(int selectedQuantity) {
+		this.selectedQuantity = selectedQuantity;
 	}
 
+	public void setTotalPrice(double totalPrice) {
+		this.totalPrice = totalPrice;
+	}
 }

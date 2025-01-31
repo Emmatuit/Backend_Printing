@@ -3,62 +3,32 @@ package com.example.demo.Dto;
 import java.util.List;
 
 public class CartItemDto {
-	private Long productId;
-	private Integer selectedQuantity;
-	private CartProductDisplay productDisplay; // Store CartProductDisplay here
-	private Double calculatedPrice; // New field for the calculated price
-	 private List<Long> selectedOptionIds;
+	private ProductDto product;
+	private int selectedQuantity;
+	private List<SpecificationOptionDTO> selectedOptions;
 
-	public CartItemDto() {
+	// Getters and Setters
+	public ProductDto getProduct() {
+		return product;
 	}
 
-	// Constructor
-	public CartItemDto(Long productId, Integer selectedQuantity, CartProductDisplay productDisplay,
-			Double calculatedPrice) {
-		this.productId = productId;
-		this.selectedQuantity = selectedQuantity;
-		this.productDisplay = productDisplay;
-		this.calculatedPrice = calculatedPrice;
+	public List<SpecificationOptionDTO> getSelectedOptions() {
+		return selectedOptions;
 	}
 
-	public Double getCalculatedPrice() {
-		return calculatedPrice;
-	}
-
-	public List<Long> getSelectedOptionIds() {
-		return selectedOptionIds;
-	}
-
-	public void setSelectedOptionIds(List<Long> selectedOptionIds) {
-		this.selectedOptionIds = selectedOptionIds;
-	}
-
-	public CartProductDisplay getProductDisplay() {
-		return productDisplay;
-	}
-
-	// Getters and setters
-	public Long getProductId() {
-		return productId;
-	}
-
-	public Integer getSelectedQuantity() {
+	public int getSelectedQuantity() {
 		return selectedQuantity;
 	}
 
-	public void setCalculatedPrice(Double calculatedPrice) {
-		this.calculatedPrice = calculatedPrice;
+	public void setProduct(ProductDto product) {
+		this.product = product;
 	}
 
-	public void setProductDisplay(CartProductDisplay productDisplay) {
-		this.productDisplay = productDisplay;
+	public void setSelectedOptions(List<SpecificationOptionDTO> selectedOptions) {
+		this.selectedOptions = selectedOptions;
 	}
 
-	public void setProductId(Long productId) {
-		this.productId = productId;
-	}
-
-	public void setSelectedQuantity(Integer selectedQuantity) {
+	public void setSelectedQuantity(int selectedQuantity) {
 		this.selectedQuantity = selectedQuantity;
 	}
 }

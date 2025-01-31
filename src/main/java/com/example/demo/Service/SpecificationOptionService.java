@@ -12,18 +12,18 @@ import com.example.demo.model.SpecificationOption;
 @Service
 public class SpecificationOptionService {
 
-    @Autowired
-    private SpecificationOptionRepository specificationOptionRepository;
+	@Autowired
+	private SpecificationOptionRepository specificationOptionRepository;
 
+	public List<SpecificationOption> getSpecificationOptionsBySpecification(Specification specification) {
+		return specificationOptionRepository.findBySpecification(specification);
+	}
 
-    public List<SpecificationOption> getSpecificationOptionsBySpecification(Specification specification) {
-        return specificationOptionRepository.findBySpecification(specification);
-    }
+	public SpecificationOption saveSpecificationOption(SpecificationOption option) {
+		if (option == null) {
+			throw new IllegalArgumentException("Specification option cannot be null");
+		}
+		return specificationOptionRepository.save(option);
+	}
 
-    public SpecificationOption saveSpecificationOption(SpecificationOption option) {
-        if (option == null) {
-            throw new IllegalArgumentException("Specification option cannot be null");
-        }
-        return specificationOptionRepository.save(option);
-    }
 }

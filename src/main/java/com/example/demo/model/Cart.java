@@ -25,9 +25,6 @@ public class Cart {
 	@Column(nullable = true)
 	private String sessionId; // Session identifier for non-logged-in users
 
-	@Column(nullable = true)
-	private Long userId; // User identifier for logged-in users
-
 	@OneToMany(cascade = CascadeType.ALL, mappedBy = "cart", orphanRemoval = true)
 	private List<CartItem> items = new ArrayList<>(); // List of cart items
 
@@ -36,10 +33,6 @@ public class Cart {
 
 	// Constructors, getters, and setters
 	public Cart() {
-	}
-
-	public Cart(Long userId) {
-		this.userId = userId;
 	}
 
 	public Cart(String sessionId) {
@@ -68,10 +61,6 @@ public class Cart {
 		return sessionId;
 	}
 
-	public Long getUserId() {
-		return userId;
-	}
-
 	@PrePersist
 	protected void onCreate() {
 		this.createdAt = LocalDateTime.now();
@@ -87,16 +76,8 @@ public class Cart {
 		this.id = id;
 	}
 
-	public void setItems(List<CartItem> items) {
-		this.items = items;
-	}
-
 	public void setSessionId(String sessionId) {
 		this.sessionId = sessionId;
-	}
-
-	public void setUserId(Long userId) {
-		this.userId = userId;
 	}
 
 }

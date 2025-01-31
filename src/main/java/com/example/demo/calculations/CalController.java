@@ -15,16 +15,16 @@ public class CalController {
 
 	private CalculationBased calculationBased;
 
-    // Setter for CalculationBased
-    @Autowired
-    public void setCalculationBased(CalculationBased calculationBased) {
-        this.calculationBased = calculationBased;
-    }
-
 	// API to get quantity options for a product
 	@GetMapping("/{productId}/quantity-options")
 	public ResponseEntity<List<Integer>> getQuantityOptions(@PathVariable("productId") Long productId) {
 		List<Integer> quantityOptions = calculationBased.generateQuantityOptions(productId);
 		return ResponseEntity.ok(quantityOptions);
+	}
+
+	// Setter for CalculationBased
+	@Autowired
+	public void setCalculationBased(CalculationBased calculationBased) {
+		this.calculationBased = calculationBased;
 	}
 }

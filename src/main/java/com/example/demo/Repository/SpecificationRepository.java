@@ -13,10 +13,10 @@ import com.example.demo.model.Specification;
 @Repository
 public interface SpecificationRepository extends JpaRepository<Specification, Long> {
 
+	List<Specification> findByProduct(Product product);
+
 	// Custom query to fetch specifications linked to a specific product
 	@Query("SELECT s FROM Specification s WHERE s.product.id = :productId")
 	List<Specification> findByProductId(@Param("productId") Long productId);
-
-    List<Specification> findByProduct(Product product);
 
 }
