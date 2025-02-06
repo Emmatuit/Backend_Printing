@@ -55,32 +55,20 @@ public class CartController {
 
 	@GetMapping("/items")
 	public ResponseEntity<List<CartItemDto>> getAllCartItems(@RequestParam("sessionId") String sessionId) {
-		try {
-			// Get all cart items for the given session ID
-			List<CartItemDto> cartItems = cartService.getAllCartItems(sessionId);
+	    // Get all cart items for the given session ID
+	    List<CartItemDto> cartItems = cartService.getAllCartItems(sessionId);
 
-			// Return empty list if cart is empty
-			if (cartItems.isEmpty()) {
-				return ResponseEntity.ok(Collections.emptyList());
-			}
-
-			// Return 200 OK with the list of cart items
-			return ResponseEntity.ok(cartItems);
-
-		} catch (IllegalArgumentException e) {
-			// Bad Request if the sessionId is invalid
-			return ResponseEntity.badRequest().body(Collections.emptyList());
-		} catch (Exception e) {
-			// Internal Server Error if there’s any unexpected issue
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());
-		}
+	    // Return empty list if cart is empty
+	    return ResponseEntity.ok(cartItems);
 	}
 
-@GetMapping("/count")
-	public int getCartItemCount(@RequestParam("sessionId") String sessionId) {
-		Cart cart = cartRepository.findBySessionId(sessionId).orElse(new Cart(sessionId));
-		return cart.getItems().size(); // Count of distinct products
+
+	@GetMapping("/cart/count")
+	public ResponseEntity<Integer> getCartItemCount(@RequestParam("sessionId") String sessionId) {
+	    int itemCount = cartService.getCartItemCount(sessionId);
+	    return ResponseEntity.ok(itemCount);
 	}
+
 
 	//	@GetMapping("/total")
 //	public ResponseEntity<Map<String, Object>> getCartTotal(@RequestParam("sessionId") String sessionId) {

@@ -5,11 +5,22 @@ import java.util.List;
 public class CartItemDto {
 	private ProductDto product;
 	private int selectedQuantity;
+	  private Double totalPrice;
+	  
 	private List<SpecificationOptionDTO> selectedOptions;
-
+	
+	
 	// Getters and Setters
 	public ProductDto getProduct() {
 		return product;
+	}
+
+	public Double getTotalPrice() {
+		return totalPrice;
+	}
+
+	public void setTotalPrice(Double totalPrice) {
+		this.totalPrice = totalPrice;
 	}
 
 	public List<SpecificationOptionDTO> getSelectedOptions() {

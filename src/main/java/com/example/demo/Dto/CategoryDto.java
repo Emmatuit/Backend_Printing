@@ -1,5 +1,6 @@
 package com.example.demo.Dto;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class CategoryDto {
@@ -7,7 +8,7 @@ public class CategoryDto {
 	private String name;
 	private String description;
 	private String encryptedImage; // To represent the image path or encryption
-	private List<SubcategoryDto> subcategories; // List of subcategories
+	 private List<SubcategoryDto> subcategories = new ArrayList<>(); // List of subcategories
 
 	public CategoryDto() {
 		// TODO Auto-generated constructor stub

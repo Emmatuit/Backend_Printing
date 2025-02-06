@@ -113,35 +113,6 @@ public class ProductController {
 				new TypeReference<List<SpecificationDTO>>() {
 				});
 
-//	     for (SpecificationDTO specDto : specifications) {
-//	         Specification specification = new Specification();
-//	         specification.setName(specDto.getName());
-//	         specification.setProduct(product);
-//	         specification = specificationService.saveSpecification(specification);
-//
-//	         // Save options for each specification
-//	         int optionIndex = 0;
-//	         for (SpecificationOptionDTO optionDto : specDto.getOptions()) {
-//	             SpecificationOption option = new SpecificationOption();
-//	             option.setName(optionDto.getName());
-//	             option.setPrice(optionDto.getPrice());
-//
-//	          // Handle image for each option (from specImages)
-//	             if (optionIndex < specImages.size()) {
-//	                 MultipartFile specImage = specImages.get(optionIndex);
-//	                 if (specImage != null && !specImage.isEmpty()) {
-//	                     // Upload specImage to ImageKit and get the URL
-//	                     String specImageUrl = imagekitService.uploadSpecificationImageFile(specImage); // Use the uploadFile method
-//	                     option.setImage(specImageUrl); // Set the URL in the option
-//	                 }
-//	             }
-//
-//	             option.setSpecification(specification);
-//	             specificationOptionService.saveSpecificationOption(option);
-//
-//	             // Increment optionIndex to handle next specification image
-//	             optionIndex++;
-//	         }
 		for (SpecificationDTO specDto : specifications) {
 			Specification specification = new Specification();
 			specification.setName(specDto.getName());

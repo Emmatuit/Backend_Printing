@@ -1,11 +1,12 @@
 package com.example.demo.Dto;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class SubcategoryDto {
 	private Long id;
 	private String name;
-	private List<ProductDto> products;
+	private List<ProductDto> products = new ArrayList<>();
 	private long categoryId;// List of products under this subcategory
 
 	public SubcategoryDto() {

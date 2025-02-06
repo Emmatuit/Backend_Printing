@@ -3,6 +3,7 @@ package com.example.demo.Service;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -111,6 +112,8 @@ public class CartService {
 		return convertToCartItemDTO(cartItem);
 	}
 
+
+
 	@Scheduled(cron = "0 0 */1 * * *") // Every hour (use this as a realistic testing interval)
 	public void clearExpiredCarts() {
 		LocalDateTime sevenDaysAgo = LocalDateTime.now().minusDays(7);
@@ -155,79 +158,14 @@ public class CartService {
 		);
 	}
 
-//	// Helper method to find a cart item by productId
-//	private CartItem findCartItem(Cart cart, Long productId) {
-//		return cart.getItems().stream().filter(item -> item.getProductId().equals(productId)).findFirst().orElseThrow(
-//				() -> new IllegalArgumentException("Item not found in the cart with Product ID: " + productId));
-//	}
-//
-//	public CartDto getCart(String sessionId) {
-//		// Attempt to fetch the cart
-//		Cart cart = cartRepository.findBySessionId(sessionId).orElse(null);
-//
-//		// If no cart exists, return an empty cart
-//		if (cart == null) {
-//			CartDto emptyCart = new CartDto();
-//			emptyCart.setSessionId(sessionId);
-//			emptyCart.setItems(Collections.emptyList()); // Empty list for items
-//			return emptyCart;
-//		}
-//
-//		// Convert Cart to CartDto
-//		CartDto cartDto = new CartDto();
-//		cartDto.setSessionId(cart.getSessionId());
-//
-//		List<CartItemDto> itemDtos = cart.getItems().stream().map(item -> {
-//			// Fetch product details (name and description)
-//			Product product = productRepository.findById(item.getProductId())
-//					.orElseThrow(() -> new RuntimeException("Product not found"));
-//
-//			// Create CartProductDisplay for product details
-//			CartProductDisplay productDisplay = new CartProductDisplay(product.getName(), product.getDescription(),
-//					product.getBaseprice());
-//
-//			// Create CartItemDto with product details and selected quantity
-//			return new CartItemDto(item.getProductId(), item.getQuantity(), productDisplay, item.getPrice(), null);
-//		}).collect(Collectors.toList());
-//
-//		cartDto.setItems(itemDtos);
-//
-//		return cartDto;
-//	}
+
 
 	// ✅ Convert SpecificationOption -> SpecificationOptionDTO
 	private SpecificationOptionDTO convertToSpecificationOptionDto(SpecificationOption option) {
 		return new SpecificationOptionDTO(option.getId(), option.getName(), option.getPrice(), option.getImage());
 	}
 
-//	public List<CartItemDto> getAllCartItems(String sessionId) {
-//        // Fetch the cart by session ID
-//        Cart cart = cartRepository.findBySessionId(sessionId)
-//                .orElseThrow(() -> new IllegalArgumentException("Cart not found for session ID: " + sessionId));
-//
-//        // Map cart items to DTOs
-//        return cart.getItems().stream()
-//                .map(cartItem -> {
-//                    CartItemDto cartItemDto = new CartItemDto();
-//                    cartItemDto.setProductId(cartItem.getProductId());
-//                    cartItemDto.setSelectedQuantity(cartItem.getQuantity());
-//                    cartItemDto.setCalculatedPrice(cartItem.getPrice());
-//
-//                    // Fetch product details and populate product display
-//                    Product product = productRepository.findById(cartItem.getProductId())
-//                            .orElseThrow(() -> new IllegalArgumentException("Invalid product ID: " + cartItem.getProductId()));
-//
-//                    CartProductDisplay productDisplay = new CartProductDisplay();
-//                    productDisplay.setName(product.getName());
-//                    productDisplay.setDescription(product.getDescription());
-//                    productDisplay.setBaseprice(product.getBaseprice());
-//
-//                    cartItemDto.setProductDisplay(productDisplay);
-//
-//                    return cartItemDto;
-//                })
-//                .collect(Collectors.toList());
-//    }
+
 
 	// Helper method to convert SpecificationOption to SpecificationOptionDTO
 	private SpecificationOptionDTO convertToSpecificationOptionDTO(SpecificationOption option) {
@@ -238,75 +176,77 @@ public class CartService {
 		optionDTO.setPrice(option.getPrice());
 		return optionDTO;
 	}
+	
+	
 
-	// Method to get all cart items for a session
 	public List<CartItemDto> getAllCartItems(String sessionId) {
-		// Fetch the cart by sessionId
-		Cart cart = cartRepository.findBySessionId(sessionId)
-				.orElseThrow(() -> new IllegalArgumentException("Cart not found for session ID: " + sessionId));
+	    // Fetch the cart by sessionId (return empty if not found)
+	    Cart cart = cartRepository.findBySessionId(sessionId).orElse(null);
 
-		// Map the CartItems to CartItemDtos
-		return cart.getItems().stream().map(this::toDto) // Call the internal mapper method
-				.collect(Collectors.toList());
+	    // If cart is not found OR cart has no items, return an empty list
+	    if (cart == null || cart.getItems().isEmpty()) {
+	        return Collections.emptyList();
+	    }
+	    // Convert cart items to DTOs
+	    return cart.getItems().stream().map(this::toDto).collect(Collectors.toList());
 	}
+
 
 	public Cart getCartBySessionId(String sessionId) {
 		return cartRepository.findBySessionId(sessionId)
 				.orElseThrow(() -> new RuntimeException("Cart not found for session: " + sessionId));
 	}
 
+
 	private CartItemDto toDto(CartItem cartItem) {
-		CartItemDto dto = new CartItemDto();
+	    CartItemDto dto = new CartItemDto();
 
-		// Convert CartItem's product to ProductDto (including specifications)
-		Product product = cartItem.getProduct();
-		ProductDto productDto = new ProductDto(product.getId(), product.getName(), product.getDescription(),
-				product.getBaseprice(), product.getMinOrderquantity(), product.getMaxQuantity(),
-				product.getIncrementStep(), product.getSubcategory() != null ? product.getSubcategory().getId() : null, // Prevent
-																														// null
-				product.getCategory() != null ? product.getCategory().getId() : null, // Prevent null
-				product.getEncryptedImages(), product.getSpecifications() != null ? product.getSpecifications().stream()
-						.map(this::convertToSpecificationDto).collect(Collectors.toList()) : Collections.emptyList() // Prevent
-																														// null
-																														// issues
-		);
+	    // Convert CartItem's product to ProductDto (including specifications)
+	    Product product = cartItem.getProduct();
+	    ProductDto productDto = new ProductDto(product.getId(), product.getName(), product.getDescription(),
+	            product.getBaseprice(), product.getMinOrderquantity(), product.getMaxQuantity(),
+	            product.getIncrementStep(), product.getSubcategory() != null ? product.getSubcategory().getId() : null, // Prevent null
+	            product.getCategory() != null ? product.getCategory().getId() : null, // Prevent null
+	            product.getEncryptedImages(), product.getSpecifications() != null ? product.getSpecifications().stream()
+	                    .map(this::convertToSpecificationDto).collect(Collectors.toList()) : Collections.emptyList() // Prevent null issues
+	    );
 
-		// Set the converted productDto
-		dto.setProduct(productDto);
+	    // Set the converted productDto
+	    dto.setProduct(productDto);
 
-		// Convert selected options (if any) to SpecificationOptionDTO
-		List<SpecificationOptionDTO> selectedOptions = cartItem.getSelectedOptions() != null ? cartItem
-				.getSelectedOptions().stream().map(this::convertToSpecificationOptionDto).collect(Collectors.toList())
-				: Collections.emptyList(); // Prevent null issues
+	    // Convert selected options (if any) to SpecificationOptionDTO
+	    List<SpecificationOptionDTO> selectedOptions = cartItem.getSelectedOptions() != null ? cartItem
+	            .getSelectedOptions().stream().map(this::convertToSpecificationOptionDto).collect(Collectors.toList())
+	            : Collections.emptyList(); // Prevent null issues
 
-		dto.setSelectedOptions(selectedOptions);
+	    dto.setSelectedOptions(selectedOptions);
 
-		// Set the selected quantity
-		dto.setSelectedQuantity(cartItem.getSelectedQuantity());
+	    // Set the selected quantity
+	    dto.setSelectedQuantity(cartItem.getSelectedQuantity());
 
-		return dto;
+	    // Get the selected option IDs (from selectedOptions)
+	    List<Long> selectedOptionIds = cartItem.getSelectedOptions().stream()
+	            .map(SpecificationOption::getId)
+	            .collect(Collectors.toList());
+
+	    // Calculate the total price and set it
+	    Double calculatedPrice = productService.calculateTotalPrice(
+	            cartItem.getProduct().getId(),
+	            cartItem.getSelectedQuantity(),
+	            selectedOptionIds // Pass the correct List<Long> here
+	    );
+	    dto.setTotalPrice(calculatedPrice); // Set the total price
+
+	    return dto;
+	}
+	
+	
+	public int getCartItemCount(String sessionId) {
+	    Cart cart = cartRepository.findBySessionId(sessionId)
+	            .orElseThrow(() -> new IllegalArgumentException("Cart not found for session ID: " + sessionId));
+	    return cart.getItems().size();
 	}
 
-//	// Method to convert CartItem to CartItemDto (Mapper)
-//	private CartItemDto toDto(CartItem cartItem) {
-//		CartItemDto dto = new CartItemDto();
-//		// Convert CartItem's product to ProductDto
-//		dto.setProduct(new ProductDto(cartItem.getProduct().getId(), cartItem.getProduct().getName(),
-//				cartItem.getProduct().getDescription(), cartItem.getProduct().getBaseprice(),
-//				cartItem.getProduct().getMinOrderquantity(), cartItem.getProduct().getMaxQuantity(),
-//				cartItem.getProduct().getIncrementStep(), cartItem.getProduct().getSubcategory().getId(),
-//				cartItem.getProduct().getCategory().getId(), cartItem.getProduct().getEncryptedImages()));
-//
-//		// Convert selected options (if any) to SpecificationOptionDto
-//		dto.setSelectedOptions(
-//				cartItem.getSelectedOptions().stream().map(option -> new SpecificationOptionDTO(option.getId(),
-//						option.getName(), option.getPrice(), option.getImage())).collect(Collectors.toList()));
-//
-//		// Set the selected quantity
-//		dto.setSelectedQuantity(cartItem.getSelectedQuantity());
-//
-//		return dto;
-//	}
 
 // // Scheduled to run daily at midnight
 //    @Scheduled(cron = "0 0 0 * * ?")
