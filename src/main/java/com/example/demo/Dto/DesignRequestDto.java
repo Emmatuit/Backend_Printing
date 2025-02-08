@@ -1,45 +1,51 @@
 package com.example.demo.Dto;
 
+
 public class DesignRequestDto {
 
-	private Long productId; // Reference to the Product's ID
-	private String designFileUrl;
-	private String customerNotes;
+    private String fileName;
+    private String fileType;
+    private String fileUrl;
+    private String description;
 
-	// Constructors, getters, and setters
-	public DesignRequestDto() {
-	}
+    // Constructor, getters and setters
+    public DesignRequestDto(String fileName, String fileType, String fileUrl, String description) {
+        this.fileName = fileName;
+        this.fileType = fileType;
+        this.fileUrl = fileUrl;
+        this.description = description;
+    }
 
-	public DesignRequestDto(Long productId, String designFileUrl, String customerNotes) {
-		this.productId = productId;
-		this.designFileUrl = designFileUrl;
-		this.customerNotes = customerNotes;
-	}
+    public String getFileName() {
+        return fileName;
+    }
 
-	public String getCustomerNotes() {
-		return customerNotes;
-	}
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
+    }
 
-	public String getDesignFileUrl() {
-		return designFileUrl;
-	}
+    public String getFileType() {
+        return fileType;
+    }
 
-	public Long getProductId() {
-		return productId;
-	}
+    public void setFileType(String fileType) {
+        this.fileType = fileType;
+    }
 
-	public void setCustomerNotes(String customerNotes) {
-		this.customerNotes = customerNotes;
-	}
+    public String getFileUrl() {
+        return fileUrl;
+    }
 
-	public void setDesignFileUrl(String designFileUrl) {
-		this.designFileUrl = designFileUrl;
-	}
+    public void setFileUrl(String fileUrl) {
+        this.fileUrl = fileUrl;
+    }
 
-	public void setProductId(Long productId) {
-		this.productId = productId;
-	}
+    public String getDescription() {
+        return description;
+    }
 
-	// Getters and Setters...
-
+    public void setDescription(String description) {
+        this.description = description;
+    }
 }
+

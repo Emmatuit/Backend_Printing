@@ -1,5 +1,6 @@
 package com.example.demo.Service;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
@@ -11,23 +12,35 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.example.demo.Dto.CartItemDto;
 import com.example.demo.Dto.ProductDto;
 import com.example.demo.Dto.SpecificationDTO;
 import com.example.demo.Dto.SpecificationOptionDTO;
+import com.example.demo.Imagekit.ImagekitService;
 import com.example.demo.Repository.CartItemRepository;
 import com.example.demo.Repository.CartRepository;
+import com.example.demo.Repository.DesignRequestRepository;
 import com.example.demo.Repository.ProductRepository;
 import com.example.demo.Repository.SpecificationOptionRepository;
 import com.example.demo.Repository.SpecificationRepository;
 import com.example.demo.calculations.CalculationBased;
 import com.example.demo.model.Cart;
 import com.example.demo.model.CartItem;
+import com.example.demo.model.DesignRequest;
 import com.example.demo.model.Product;
 import com.example.demo.model.Specification;
 import com.example.demo.model.SpecificationOption;
+
+import io.imagekit.sdk.exceptions.BadRequestException;
+import io.imagekit.sdk.exceptions.ForbiddenException;
+import io.imagekit.sdk.exceptions.InternalServerException;
+import io.imagekit.sdk.exceptions.TooManyRequestsException;
+import io.imagekit.sdk.exceptions.UnauthorizedException;
+import io.imagekit.sdk.exceptions.UnknownException;
+import jakarta.transaction.Transactional;
 
 @Service
 public class CartService {
@@ -63,55 +76,118 @@ public class CartService {
 
 	@Autowired
 	private SpecificationOptionService specificationOptionService;
+	
+	
+	
+	@Autowired
+	private DesignRequestRepository designRequestRepository;
 
-	public CartItemDto addItemToCart(String sessionId, CartItemDto cartItemDTO) {
-		// Retrieve or create a cart
-		Cart cart = cartRepository.findBySessionId(sessionId).orElseGet(() -> cartRepository.save(new Cart(sessionId)));
+//	public CartItemDto addItemToCart(String sessionId, CartItemDto cartItemDTO) {
+//		// Retrieve or create a cart
+//		Cart cart = cartRepository.findBySessionId(sessionId).orElseGet(() -> cartRepository.save(new Cart(sessionId)));
+//
+//		// Validate input
+//		if (cartItemDTO == null || cartItemDTO.getProduct() == null || cartItemDTO.getSelectedOptions() == null) {
+//			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Product or selected options cannot be null.");
+//		}
+//
+//		// Fetch product from database
+//		Product product = productRepository.findById(cartItemDTO.getProduct().getId())
+//				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found"));
+//
+//		// Fetch selected options
+//		List<SpecificationOption> selectedOptions = cartItemDTO.getSelectedOptions().stream()
+//				.map(optionDTO -> specificationOptionRepository.findById(optionDTO.getId())
+//						.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+//								"Selected option with ID " + optionDTO.getId() + " not found")))
+//				.collect(Collectors.toList());
+//
+//		// Validate selected options
+//		try {
+//			validateSelectedOptions(selectedOptions);
+//		} catch (IllegalArgumentException e) {
+//			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+//		}
+//
+//		// Calculate valid quantity options
+//		List<Integer> validQuantities = calculationBased.generateQuantityOptions(product.getId());
+//		int selectedQuantity = cartItemDTO.getSelectedQuantity();
+//
+//		if (!validQuantities.contains(selectedQuantity)) {
+//			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+//					"Invalid quantity selected. Valid quantities are: " + validQuantities);
+//		}
+//
+//		// Calculate the total price
+//		List<Long> selectedOptionIds = selectedOptions.stream().map(SpecificationOption::getId).toList();
+//		double totalPrice = productService.calculateTotalPrice(product.getId(), selectedQuantity, selectedOptionIds);
+//
+//		// Create and add cart item
+//		CartItem cartItem = new CartItem(product, selectedQuantity, totalPrice, selectedOptions);
+//		cart.addItem(cartItem);
+//		cartRepository.save(cart); // Ensure cart is saved after modification
+//
+//		return convertToCartItemDTO(cartItem);
+//	}
 
-		// Validate input
-		if (cartItemDTO == null || cartItemDTO.getProduct() == null || cartItemDTO.getSelectedOptions() == null) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Product or selected options cannot be null.");
-		}
 
-		// Fetch product from database
-		Product product = productRepository.findById(cartItemDTO.getProduct().getId())
-				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found"));
+	@Transactional
+	public CartItemDto addItemToCart(String sessionId, CartItemDto cartItemDTO, Long designRequestId) {
+	    
+	    // Retrieve or create a cart
+	    Cart cart = cartRepository.findBySessionId(sessionId)
+	            .orElseGet(() -> cartRepository.save(new Cart(sessionId)));
 
-		// Fetch selected options
-		List<SpecificationOption> selectedOptions = cartItemDTO.getSelectedOptions().stream()
-				.map(optionDTO -> specificationOptionRepository.findById(optionDTO.getId())
-						.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-								"Selected option with ID " + optionDTO.getId() + " not found")))
-				.collect(Collectors.toList());
+	    // Validate input
+	    if (cartItemDTO == null || cartItemDTO.getProduct() == null || cartItemDTO.getSelectedOptions() == null) {
+	        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Product or selected options cannot be null.");
+	    }
 
-		// Validate selected options
-		try {
-			validateSelectedOptions(selectedOptions);
-		} catch (IllegalArgumentException e) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
-		}
+	    // Fetch product from database
+	    Product product = productRepository.findById(cartItemDTO.getProduct().getId())
+	            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found"));
 
-		// Calculate valid quantity options
-		List<Integer> validQuantities = calculationBased.generateQuantityOptions(product.getId());
-		int selectedQuantity = cartItemDTO.getSelectedQuantity();
+	    // Fetch selected options
+	    List<SpecificationOption> selectedOptions = cartItemDTO.getSelectedOptions().stream()
+	            .map(optionDTO -> specificationOptionRepository.findById(optionDTO.getId())
+	                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+	                            "Selected option with ID " + optionDTO.getId() + " not found")))
+	            .collect(Collectors.toList());
 
-		if (!validQuantities.contains(selectedQuantity)) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-					"Invalid quantity selected. Valid quantities are: " + validQuantities);
-		}
+	    // Validate selected options
+	    try {
+	        validateSelectedOptions(selectedOptions);
+	    } catch (IllegalArgumentException e) {
+	        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+	    }
 
-		// Calculate the total price
-		List<Long> selectedOptionIds = selectedOptions.stream().map(SpecificationOption::getId).toList();
-		double totalPrice = productService.calculateTotalPrice(product.getId(), selectedQuantity, selectedOptionIds);
+	    // Validate Design Request
+	    DesignRequest designRequest = designRequestRepository.findById(designRequestId)
+	            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Design Request not found"));
 
-		// Create and add cart item
-		CartItem cartItem = new CartItem(product, selectedQuantity, totalPrice, selectedOptions);
-		cart.addItem(cartItem);
-		cartRepository.save(cart); // Ensure cart is saved after modification
+	    // Calculate valid quantity options
+	    List<Integer> validQuantities = calculationBased.generateQuantityOptions(product.getId());
+	    int selectedQuantity = cartItemDTO.getSelectedQuantity();
 
-		return convertToCartItemDTO(cartItem);
-	}
+	    if (!validQuantities.contains(selectedQuantity)) {
+	        throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+	                "Invalid quantity selected. Valid quantities are: " + validQuantities);
+	    }
 
+	    // Calculate the total price
+	    List<Long> selectedOptionIds = selectedOptions.stream().map(SpecificationOption::getId).toList();
+	    double totalPrice = productService.calculateTotalPrice(product.getId(), selectedQuantity, selectedOptionIds);
+
+	    // Create and add cart-item
+	    CartItem cartItem = new CartItem(product, selectedQuantity, totalPrice, selectedOptions);
+	    cartItem.setDesignRequest(designRequest); // Attach Design Request
+	    cart.addItem(cartItem);
+	    cartRepository.save(cart); // Ensure cart is saved after modification
+
+	    return convertToCartItemDTO(cartItem);
+}
+
+	
 
 
 	@Scheduled(cron = "0 0 */1 * * *") // Every hour (use this as a realistic testing interval)

@@ -5,14 +5,19 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.example.demo.Dto.CartItemDto;
 import com.example.demo.Repository.CartRepository;
@@ -35,23 +40,31 @@ public class CartController {
 	private ProductService productService;
 
 	// Add item to cart
-	@PostMapping("/add")
-	public ResponseEntity<String> addToCart(@RequestParam("sessionId") String sessionId,
-			@RequestBody CartItemDto cartItemDTO) {
-		if (cartItemDTO.getProduct() == null || cartItemDTO.getSelectedOptions() == null) {
-			return ResponseEntity.badRequest().body("Product or selected options cannot be null.");
-		}
-		cartService.addItemToCart(sessionId, cartItemDTO);
-		return ResponseEntity.ok("Item added to cart!");
-	}
+//	@PostMapping("/add")
+//	public ResponseEntity<String> addToCart(@RequestParam("sessionId") String sessionId,
+//			@RequestBody CartItemDto cartItemDTO) {
+//		if (cartItemDTO.getProduct() == null || cartItemDTO.getSelectedOptions() == null) {
+//			return ResponseEntity.badRequest().body("Product or selected options cannot be null.");
+//		}
+//		cartService.addItemToCart(sessionId, cartItemDTO);
+//		return ResponseEntity.ok("Item added to cart!");
+//	}
+	
+	 @PostMapping("/add")
+	    public ResponseEntity<String> addItemToCart(
+	            @RequestParam ("sessionId") String sessionId, 
+	            @RequestParam ("designRequestId") Long designRequestId, 
+	            @RequestBody CartItemDto cartItemDto) {
+
+			if (cartItemDto.getProduct() == null || cartItemDto.getSelectedOptions() == null) {
+				return ResponseEntity.badRequest().body("Product or selected options cannot be null.");
+			}
+	        cartService.addItemToCart(sessionId, cartItemDto, designRequestId);
+	        return ResponseEntity.ok("Item added to cart!");
+	    }
+	
 
 	// Get the cart details
-
-//	@GetMapping("/get")
-//	public ResponseEntity<CartDto> getCart(@RequestParam("sessionId") String sessionId) {
-//		CartDto cartDto = cartService.getCart(sessionId);
-//		return ResponseEntity.ok(cartDto);
-//	}
 
 	@GetMapping("/items")
 	public ResponseEntity<List<CartItemDto>> getAllCartItems(@RequestParam("sessionId") String sessionId) {

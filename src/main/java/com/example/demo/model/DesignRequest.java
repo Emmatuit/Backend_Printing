@@ -1,99 +1,91 @@
 package com.example.demo.model;
 
-import java.time.LocalDateTime;
-
-import com.example.demo.Enum.DesignStatus;
-
-import jakarta.persistence.Column;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 
 @Entity
 public class DesignRequest {
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
+	    @Id
+	    @GeneratedValue(strategy = GenerationType.IDENTITY)
+	    private Long id;
 
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "product_id", nullable = false)
-	private Product product; // Reference to the Product entity
+	    private String fileName;
+	    private String fileType;
+	    private String fileUrl; // URL of the uploaded file (either cloud URL or local path)
+	    private String description; // Add description field for the image
 
-	@Column(nullable = false)
-	private String designFileUrl; // URL to the uploaded design file
+	    @OneToOne(mappedBy = "designRequest", cascade = CascadeType.ALL)
+	    private CartItem cartItem;  // Linked to the cart item
 
-	@Enumerated(EnumType.STRING)
-	private DesignStatus designStatus = DesignStatus.PENDING; // Default status is PENDING
+		public DesignRequest(Long id, String fileName, String fileType, String fileUrl, String description,
+				CartItem cartItem) {
+			super();
+			this.id = id;
+			this.fileName = fileName;
+			this.fileType = fileType;
+			this.fileUrl = fileUrl;
+			this.description = description;
+			this.cartItem = cartItem;
+		}
 
-	private String customerNotes; // Optional notes from the customer
+		public Long getId() {
+			return id;
+		}
 
-	private LocalDateTime submittedAt = LocalDateTime.now(); // Timestamp for submission
+		public void setId(Long id) {
+			this.id = id;
+		}
 
-	// Constructors, getters, and setters
-	public DesignRequest() {
-	}
+		public String getFileName() {
+			return fileName;
+		}
 
-	public DesignRequest(Product product, String designFileUrl, String customerNotes) {
-		this.product = product;
-		this.designFileUrl = designFileUrl;
-		this.customerNotes = customerNotes;
-	}
+		public void setFileName(String fileName) {
+			this.fileName = fileName;
+		}
 
-	public String getCustomerNotes() {
-		return customerNotes;
-	}
+		public String getFileType() {
+			return fileType;
+		}
 
-	public String getDesignFileUrl() {
-		return designFileUrl;
-	}
+		public void setFileType(String fileType) {
+			this.fileType = fileType;
+		}
 
-	public DesignStatus getDesignStatus() {
-		return designStatus;
-	}
+		public String getFileUrl() {
+			return fileUrl;
+		}
 
-	public Long getId() {
-		return id;
-	}
+		public void setFileUrl(String fileUrl) {
+			this.fileUrl = fileUrl;
+		}
 
-	public Product getProduct() {
-		return product;
-	}
+		public String getDescription() {
+			return description;
+		}
 
-	public LocalDateTime getSubmittedAt() {
-		return submittedAt;
-	}
+		public void setDescription(String description) {
+			this.description = description;
+		}
 
-	public void setCustomerNotes(String customerNotes) {
-		this.customerNotes = customerNotes;
-	}
+		public CartItem getCartItem() {
+			return cartItem;
+		}
 
-	public void setDesignFileUrl(String designFileUrl) {
-		this.designFileUrl = designFileUrl;
-	}
+		public DesignRequest() {
+			super();
+			// TODO Auto-generated constructor stub
+		}
 
-	public void setDesignStatus(DesignStatus designStatus) {
-		this.designStatus = designStatus;
-	}
+		public void setCartItem(CartItem cartItem) {
+			this.cartItem = cartItem;
+		}
 
-	public void setId(Long id) {
-		this.id = id;
-	}
-
-	public void setProduct(Product product) {
-		this.product = product;
-	}
-
-	public void setSubmittedAt(LocalDateTime submittedAt) {
-		this.submittedAt = submittedAt;
-	}
-
-	// Getters and Setters...
-
+		
+	    // Getters and setters
 }

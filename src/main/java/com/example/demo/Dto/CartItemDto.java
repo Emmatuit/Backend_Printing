@@ -6,10 +6,34 @@ public class CartItemDto {
 	private ProductDto product;
 	private int selectedQuantity;
 	  private Double totalPrice;
-	  
 	private List<SpecificationOptionDTO> selectedOptions;
+	 private DesignRequestDto designRequestDto;
 	
-	
+		 
+	 
+	public CartItemDto() {
+		super();
+		// TODO Auto-generated constructor stub
+	}
+
+	public CartItemDto(ProductDto product, int selectedQuantity, Double totalPrice,
+			List<SpecificationOptionDTO> selectedOptions, DesignRequestDto designRequestDto) {
+		super();
+		this.product = product;
+		this.selectedQuantity = selectedQuantity;
+		this.totalPrice = totalPrice;
+		this.selectedOptions = selectedOptions;
+		this.designRequestDto = designRequestDto;
+	}
+
+	public DesignRequestDto getDesignRequestDto() {
+		return designRequestDto;
+	}
+
+	public void setDesignRequestDto(DesignRequestDto designRequestDto) {
+		this.designRequestDto = designRequestDto;
+	}
+
 	// Getters and Setters
 	public ProductDto getProduct() {
 		return product;
