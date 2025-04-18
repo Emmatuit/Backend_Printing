@@ -213,13 +213,13 @@ public class CategoryService {
 		}
 	}
 
-	
+
 	public List<CategoryDto> getAllCategories() {
 		List<Category> categories = categoryRepository.findAll();
 		System.out.println("Categories API Response: " + categories);
 
 		if (categories.isEmpty()) {
-			return Collections.emptyList(); // ✅ Returns [] instead of null 
+			return Collections.emptyList(); // ✅ Returns [] instead of null
 		}
 		return categories.stream().map(this::convertToCategoryDto).collect(Collectors.toList());
 	}

@@ -1,6 +1,5 @@
 package com.example.demo.Service;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
@@ -12,20 +11,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.example.demo.Dto.CartItemDto;
 import com.example.demo.Dto.ProductDto;
 import com.example.demo.Dto.SpecificationDTO;
 import com.example.demo.Dto.SpecificationOptionDTO;
-import com.example.demo.Imagekit.ImagekitService;
 import com.example.demo.Repository.CartItemRepository;
 import com.example.demo.Repository.CartRepository;
 import com.example.demo.Repository.DesignRequestRepository;
 import com.example.demo.Repository.ProductRepository;
 import com.example.demo.Repository.SpecificationOptionRepository;
 import com.example.demo.Repository.SpecificationRepository;
+import com.example.demo.Repository.UserRepository;
 import com.example.demo.calculations.CalculationBased;
 import com.example.demo.model.Cart;
 import com.example.demo.model.CartItem;
@@ -33,13 +31,9 @@ import com.example.demo.model.DesignRequest;
 import com.example.demo.model.Product;
 import com.example.demo.model.Specification;
 import com.example.demo.model.SpecificationOption;
+import com.example.demo.model.UserEntity;
 
-import io.imagekit.sdk.exceptions.BadRequestException;
-import io.imagekit.sdk.exceptions.ForbiddenException;
-import io.imagekit.sdk.exceptions.InternalServerException;
-import io.imagekit.sdk.exceptions.TooManyRequestsException;
-import io.imagekit.sdk.exceptions.UnauthorizedException;
-import io.imagekit.sdk.exceptions.UnknownException;
+import jakarta.servlet.http.HttpSession;
 import jakarta.transaction.Transactional;
 
 @Service
@@ -76,9 +70,9 @@ public class CartService {
 
 	@Autowired
 	private SpecificationOptionService specificationOptionService;
-	
-	
-	
+
+
+
 	@Autowired
 	private DesignRequestRepository designRequestRepository;
 
@@ -133,7 +127,7 @@ public class CartService {
 
 	@Transactional
 	public CartItemDto addItemToCart(String sessionId, CartItemDto cartItemDTO, Long designRequestId) {
-	    
+
 	    // Retrieve or create a cart
 	    Cart cart = cartRepository.findBySessionId(sessionId)
 	            .orElseGet(() -> cartRepository.save(new Cart(sessionId)));
@@ -187,7 +181,7 @@ public class CartService {
 	    return convertToCartItemDTO(cartItem);
 }
 
-	
+
 
 
 	@Scheduled(cron = "0 0 */1 * * *") // Every hour (use this as a realistic testing interval)
@@ -252,12 +246,12 @@ public class CartService {
 		optionDTO.setPrice(option.getPrice());
 		return optionDTO;
 	}
-	
-	
+
+
 
 	public List<CartItemDto> getAllCartItems(String sessionId) {
 	    // Fetch the cart by sessionId (return empty if not found)
-	    Cart cart = cartRepository.findBySessionId(sessionId).orElse(null);
+	    Cart cart = getCartBySessionId(sessionId);
 
 	    // If cart is not found OR cart has no items, return an empty list
 	    if (cart == null || cart.getItems().isEmpty()) {
@@ -266,11 +260,33 @@ public class CartService {
 	    // Convert cart items to DTOs
 	    return cart.getItems().stream().map(this::toDto).collect(Collectors.toList());
 	}
+	
+	public List<CartItemDto> getAllCartItemsByUser(UserEntity user) {
+	    Cart cart = cartRepository.findByUser(user)
+	            .orElse(null); // Return null if no cart is found
+
+	    if (cart == null || cart.getItems().isEmpty()) {
+	        return Collections.emptyList();
+	    }
+
+	    return cart.getItems().stream()
+	            .map(this::toDto)
+	            .collect(Collectors.toList());
+	}
+	
+	
+
 
 
 	public Cart getCartBySessionId(String sessionId) {
-		return cartRepository.findBySessionId(sessionId)
-				.orElseThrow(() -> new RuntimeException("Cart not found for session: " + sessionId));
+	    return cartRepository.findBySessionId(sessionId).orElse(null);
+	}
+
+
+
+	public int getCartItemCount(String sessionId) {
+	    Cart cart = cartRepository.findBySessionId(sessionId).orElse(null);
+	    return cart != null ? cart.getItems().size() : 0;
 	}
 
 
@@ -314,13 +330,6 @@ public class CartService {
 	    dto.setTotalPrice(calculatedPrice); // Set the total price
 
 	    return dto;
-	}
-	
-	
-	public int getCartItemCount(String sessionId) {
-	    Cart cart = cartRepository.findBySessionId(sessionId)
-	            .orElseThrow(() -> new IllegalArgumentException("Cart not found for session ID: " + sessionId));
-	    return cart.getItems().size();
 	}
 
 
@@ -389,5 +398,61 @@ public class CartService {
 //		}
 //	}
 
-	// Other methods: remove item, clear cart, etc.
+
+
+	    @Autowired
+	    private UserRepository userRepository;
+
+
+
+	    @Transactional
+	    public void mergeSessionCartWithUser(String username, HttpSession session) {
+	        UserEntity user = userRepository.findByUsername(username)
+	                .orElseThrow(() -> new RuntimeException("User not found"));
+
+	        // ✅ Retrieve sessionId from session
+	        String sessionId = (String) session.getAttribute("sessionId");
+	        System.out.println("🔹 Merging cart for user: " + username);
+	        System.out.println("🔹 Retrieved sessionId: " + sessionId);
+
+	        if (sessionId == null) {
+	            System.out.println("❌ No session ID found, skipping merge.");
+	            return;
+	        }
+
+	        // ✅ Find cart linked to sessionId
+	        Optional<Cart> sessionCartOpt = cartRepository.findBySessionId(sessionId);
+	        if (sessionCartOpt.isEmpty()) {
+	            System.out.println("❌ No cart found for sessionId: " + sessionId);
+	            return;
+	        }
+
+	        Cart sessionCart = sessionCartOpt.get();
+	        System.out.println("✅ Found cart for sessionId: " + sessionId);
+
+	        // ✅ Find existing user cart or create a new one
+	        Cart userCart = cartRepository.findByUser(user)
+	                .orElseGet(() -> {
+	                    Cart newCart = new Cart();
+	                    newCart.setUser(user);
+	                    return cartRepository.save(newCart);
+	                });
+
+	        // ✅ Move all sessionCart items to userCart (use `addAll()` for batch efficiency)
+	        userCart.getItems().addAll(sessionCart.getItems());
+	        sessionCart.getItems().forEach(item -> item.setCart(userCart));
+
+	        // ✅ Save merged cart
+	        cartRepository.save(userCart);
+
+	        // ✅ Remove sessionId from session
+	        session.removeAttribute("sessionId");
+
+	        // ✅ Delete old session cart (IMPORTANT to prevent duplicate carts)
+	        cartRepository.delete(sessionCart);
+
+	        System.out.println("✅ Cart merged successfully for user: " + username);
+	    }
+
+	    
 }

@@ -1,12 +1,12 @@
 package com.example.demo.Imagekit;
 
 import java.io.IOException;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.example.demo.Repository.DesignRequestRepository;
-import com.example.demo.model.DesignRequest;
 
 import io.imagekit.sdk.ImageKit;
 import io.imagekit.sdk.exceptions.BadRequestException;
@@ -23,12 +23,12 @@ public class ImagekitService {
 
 	private final ImageKit imageKit;
 
+	@Autowired
+	private DesignRequestRepository designRequestRepository;
+
 	public ImagekitService(ImageKit imageKit) {
 		this.imageKit = imageKit;
 	}
-	
-	@Autowired
-	private DesignRequestRepository designRequestRepository;
 
 	public String uploadFile(MultipartFile file) throws IOException, InternalServerException, BadRequestException,
 			UnknownException, ForbiddenException, TooManyRequestsException, UnauthorizedException {
@@ -86,29 +86,17 @@ public class ImagekitService {
 			throw new IOException("Failed to upload image to ImageKit");
 		}
 	}
-	
-	public String uploadDesignRequest(MultipartFile file) throws IOException, InternalServerException,
-	BadRequestException, UnknownException, ForbiddenException, TooManyRequestsException, UnauthorizedException {
 
-	//Upload the original image without compression
-	byte[] imageBytes = file.getBytes(); // Get the image byte array
-	
-	//Create a FileCreateRequest for the byte array upload
-	FileCreateRequest fileCreateRequest = new FileCreateRequest(imageBytes, file.getOriginalFilename());
-	fileCreateRequest.setFolder("/DesignRequest");
-	
-	//Upload to ImageKit
-	Result result = imageKit.upload(fileCreateRequest);
-	
-	if (result != null && result.getUrl() != null) {
-		return result.getUrl(); // Return the fileId instead of URL for future deletion
-	} else {
-		throw new IOException("Failed to upload image to ImageKit");
+	public boolean deleteFileFromImageKit(String fileId) {
+	    try {
+	        imageKit.deleteFile(fileId);
+	        return true;
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        return false;
+	    }
 	}
-}
-	
-	
 
-	
+
 
 }

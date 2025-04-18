@@ -8,14 +8,16 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.example.demo.model.Cart;
+import com.example.demo.model.UserEntity;
 
 @Repository
 public interface CartRepository extends JpaRepository<Cart, Long> {
 
-	Optional<Cart> findBySessionId(String sessionId);
-	
 	@Query("SELECT COUNT(c) FROM CartItem c WHERE c.cart.sessionId = :sessionId")
 	int countCartItems(@Param("sessionId") String sessionId);
 
+	Optional<Cart> findBySessionId(String sessionId);
+
+	Optional<Cart> findByUser(UserEntity user);
 
 }

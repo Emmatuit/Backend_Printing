@@ -42,36 +42,36 @@ public class SpecificationOption {
         return id;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public String getImage() {
+        return image;
     }
 
     public String getName() {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public Double getPrice() {
+        return price;
     }
 
-    public String getImage() {
-        return image;
+    public Specification getSpecification() {
+        return specification;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public void setImage(String image) {
         this.image = image;
     }
 
-    public Double getPrice() {
-        return price;
+    public void setName(String name) {
+        this.name = name;
     }
 
     public void setPrice(Double price) {
         this.price = price;
-    }
-
-    public Specification getSpecification() {
-        return specification;
     }
 
     public void setSpecification(Specification specification) {
