@@ -3,9 +3,9 @@ package com.example.demo.Dto;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class OrderRequestDTO {
-	
+
 	@Autowired
-	 private ShippingdetailsDto shippingDetails;
+	private ShippingdetailsDto shippingDetails;
 
 	public ShippingdetailsDto getShippingDetails() {
 		return shippingDetails;
@@ -14,7 +14,5 @@ public class OrderRequestDTO {
 	public void setShippingDetails(ShippingdetailsDto shippingDetails) {
 		this.shippingDetails = shippingDetails;
 	}
-	
-	
 
 }

@@ -4,8 +4,10 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.RoundingMode;
 import java.net.URL;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -60,26 +62,22 @@ public class CategoryService {
 		}
 
 		// MultipartFile
-		if (category.getEncryptedImage() != null && !category.getEncryptedImage().isEmpty()) {
-			try {
-				URL url = new URL(category.getEncryptedImage());
-				InputStream inputStream = url.openStream();
+		List<String> uploadedImageUrls = new ArrayList<>();
 
-				// Convert InputStream to byte array
-				byte[] imageBytes = inputStream.readAllBytes(); // Java 9+
-				inputStream.close();
-
-				// Create a MultipartFile using a helper method
-				MultipartFile multipartFile = createMultipartFileFromBytes(imageBytes, "image.jpg", "image/jpeg");
-
-				// Upload the file to ImageKit
-				String fullUrl = imagekitService.uploadFile(multipartFile);
-				category.setEncryptedImage(fullUrl); // Save the full URL
-
-			} catch (IOException e) {
-				throw new RuntimeException("Failed to fetch image from URL and upload", e);
+		for (String imageUrl : category.getEncryptedImages()) {
+			if (imageUrl != null && !imageUrl.isEmpty()) {
+				try (InputStream inputStream = new URL(imageUrl).openStream()) {
+					byte[] imageBytes = inputStream.readAllBytes();
+					MultipartFile multipartFile = createMultipartFileFromBytes(imageBytes, "image.jpg", "image/jpeg");
+					String uploadedUrl = imagekitService.uploadFile(multipartFile);
+					uploadedImageUrls.add(uploadedUrl);
+				} catch (IOException e) {
+					throw new RuntimeException("Failed to upload image: " + imageUrl, e);
+				}
 			}
 		}
+
+		category.setEncryptedImages(uploadedImageUrls);
 
 		// Save the category in the database
 		return categoryRepository.save(category);
@@ -92,22 +90,33 @@ public class CategoryService {
 				: Collections.emptyList(); // Prevent null issues
 
 		return new CategoryDto(category.getId(), category.getName(), category.getDescription(),
-				category.getEncryptedImage(), // Image URL
+				category.getEncryptedImages(), // Image URL
 				subcategoryDtos);
 	}
 
-	// ✅ Convert Product -> ProductDto
 	private ProductDto convertToProductDto(Product product) {
-		List<SpecificationDTO> specificationDTOs = product.getSpecifications() != null
-				? product.getSpecifications().stream().map(this::convertToSpecificationDto).collect(Collectors.toList())
-				: Collections.emptyList(); // Prevent null issues
+	    List<SpecificationDTO> specificationDTOs = product.getSpecifications() != null
+	            ? product.getSpecifications().stream()
+	                    .map(this::convertToSpecificationDto)
+	                    .collect(Collectors.toList())
+	            : Collections.emptyList();
 
-		return new ProductDto(product.getId(), product.getName(), product.getDescription(), product.getBaseprice(),
-				product.getMinOrderquantity(), product.getMaxQuantity(), product.getIncrementStep(),
-				product.getSubcategory() != null ? product.getSubcategory().getId() : null, // Prevent null issues
-				product.getCategory() != null ? product.getCategory().getId() : null, // Prevent null issues
-				product.getEncryptedImages(), specificationDTOs // ✅ Include specifications
-		);
+	    return new ProductDto(
+	            product.getId(),
+	            product.getName(),
+	            product.getDescription(),
+	            // CORRECT: Using BigDecimal directly
+	            product.getBaseprice(),
+	            product.getMinOrderquantity(),
+	            product.getMaxQuantity(),
+	            product.getIncrementStep(),
+	            product.getSubcategory() != null ? product.getSubcategory().getId() : null,
+	            product.getCategory() != null ? product.getCategory().getId() : null,
+	            product.getEncryptedImages(),
+	            specificationDTOs,
+	            product.getViews(),
+	            product.getCreatedAt()
+	    );
 	}
 
 	// ✅ Convert Specification -> SpecificationDTO
@@ -187,11 +196,11 @@ public class CategoryService {
 				.orElseThrow(() -> new IllegalArgumentException("Category not found"));
 
 		// Get the image path from the category entity
-		String imagePath = category.getEncryptedImage();
-
-		// Delete the image file from the filesystem
-		if (imagePath != null && !imagePath.isEmpty()) {
-			deleteImageFile(imagePath);
+		List<String> imagePaths = category.getEncryptedImages();
+		if (imagePaths != null) {
+			for (String imagePath : imagePaths) {
+				deleteImageFile(imagePath);
+			}
 		}
 
 		// Delete the category from the database
@@ -212,7 +221,6 @@ public class CategoryService {
 			throw new RuntimeException("Image file not found at the specified path");
 		}
 	}
-
 
 	public List<CategoryDto> getAllCategories() {
 		List<Category> categories = categoryRepository.findAll();

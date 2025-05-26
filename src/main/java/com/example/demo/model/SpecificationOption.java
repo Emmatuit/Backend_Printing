@@ -1,80 +1,94 @@
 package com.example.demo.model;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Transient;
 
 @Entity
 public class SpecificationOption {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
 
-    private String name;
-    private String image;
-    private Double price;
+	private String name;
+	private String image;
 
-    @ManyToOne
-    @JoinColumn(name = "specification_id") // Foreign key to Specification
-    private Specification specification;
+	@Column(precision = 19, scale = 2) // Ensures proper decimal storage
+	private BigDecimal price; // Changed from Double to BigDecimal
 
-    // Getters and Setters
+	@ManyToOne
+	@JoinColumn(name = "specification_id")
+	private Specification specification;
 
-    public SpecificationOption() {
-		super();
-		// TODO Auto-generated constructor stub
+	// Constructors
+	public SpecificationOption() {
 	}
 
-	public SpecificationOption(Long id, String name, String image, Double price, Specification specification) {
-		super();
+	public SpecificationOption(Long id, String name, String image, BigDecimal price, Specification specification) {
 		this.id = id;
 		this.name = name;
 		this.image = image;
-		this.price = price;
+		this.price = price != null ? price.setScale(2, RoundingMode.HALF_UP) : null;
 		this.specification = specification;
 	}
 
+	// Backward compatibility for Double
+	public void setPrice(Double price) {
+		this.price = price != null ? BigDecimal.valueOf(price).setScale(2, RoundingMode.HALF_UP) : null;
+	}
+
+	@Transient
+	public Double getPriceAsDouble() {
+		return price != null ? price.doubleValue() : null;
+	}
+
+	// Getters and Setters
 	public Long getId() {
-        return id;
-    }
+		return id;
+	}
 
-    public String getImage() {
-        return image;
-    }
+	public void setId(Long id) {
+		this.id = id;
+	}
 
-    public String getName() {
-        return name;
-    }
+	public String getName() {
+		return name;
+	}
 
-    public Double getPrice() {
-        return price;
-    }
+	public void setName(String name) {
+		this.name = name;
+	}
 
-    public Specification getSpecification() {
-        return specification;
-    }
+	public String getImage() {
+		return image;
+	}
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+	public void setImage(String image) {
+		this.image = image;
+	}
 
-    public void setImage(String image) {
-        this.image = image;
-    }
+	public BigDecimal getPrice() {
+		return price;
+	}
 
-    public void setName(String name) {
-        this.name = name;
-    }
+	public void setPrice(BigDecimal price) {
+		this.price = price != null ? price.setScale(2, RoundingMode.HALF_UP) : null;
+	}
 
-    public void setPrice(Double price) {
-        this.price = price;
-    }
+	public Specification getSpecification() {
+		return specification;
+	}
 
-    public void setSpecification(Specification specification) {
-        this.specification = specification;
-    }
+	public void setSpecification(Specification specification) {
+		this.specification = specification;
+	}
 }

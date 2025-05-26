@@ -61,23 +61,23 @@ public class CategoryController {
 	// Method to add a new category http://localhost:8080/api/add
 	@PostMapping(value = "/add", consumes = { "multipart/form-data" })
 	public ResponseEntity<CategoryDto> addCategory(@RequestParam("name") String name,
-			@RequestParam("description") String description, @RequestParam("image") MultipartFile image)
+			@RequestParam("description") String description, @RequestParam("images") List<MultipartFile> images)
 			throws IOException, InternalServerException, BadRequestException, UnknownException, ForbiddenException,
 			TooManyRequestsException, UnauthorizedException {
 
-		// Save the image file and get the path
-		String imagePath = imagekitService.uploadFile(image);
+		List<String> uploadedImagePaths = new ArrayList<>();
 
-		// Create a new Category object
+		for (MultipartFile image : images) {
+			String imagePath = imagekitService.uploadFile(image);
+			uploadedImagePaths.add(imagePath);
+		}
+
 		Category category = new Category();
 		category.setName(name);
 		category.setDescription(description);
-		category.setEncryptedImage(imagePath); // Store the file path in the database
+		category.setEncryptedImages(uploadedImagePaths); // ✅ multiple image paths
 
-		// Save the category in the database
 		Category savedCategory = categoryService.addCategory(category);
-
-		// Convert the saved category to CategoryDto to return
 		CategoryDto savedCategoryDto = convertToCategoryDto(savedCategory);
 
 		return ResponseEntity.ok(savedCategoryDto);
@@ -89,7 +89,7 @@ public class CategoryController {
 		categoryDto.setId(category.getId());
 		categoryDto.setName(category.getName());
 		categoryDto.setDescription(category.getDescription());
-		categoryDto.setEncryptedImage(category.getEncryptedImage());
+		categoryDto.setEncryptedImages(category.getEncryptedImages());
 
 		// Ensure subcategories is never null
 		categoryDto.setSubcategories(
@@ -112,8 +112,10 @@ public class CategoryController {
 				product.getMinOrderquantity(), product.getMaxQuantity(), product.getIncrementStep(),
 				product.getSubcategory() != null ? product.getSubcategory().getId() : null, // Prevent null issues
 				product.getCategory() != null ? product.getCategory().getId() : null, // Prevent null issues
-				product.getEncryptedImages(), specificationDTOs // ✅ Include specifications
+				product.getEncryptedImages(), specificationDTOs, product.getViews(), // Add views here
+				product.getCreatedAt() // Add createdAt here
 		);
+
 	}
 
 	// ✅ Convert Specification -> SpecificationDTO

@@ -35,25 +35,13 @@ public class Cart {
 	private LocalDateTime createdAt; // Timestamp for when the cart was created
 
 	// 🔹 Add User reference here
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = true) // Nullable because guests can have carts
-    private UserEntity user;
-
-
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "user_id", nullable = true) // Nullable because guests can have carts
+	private UserEntity user;
 
 	// Constructors, getters, and setters
 	public Cart() {
 	}
-
-	// ✅ Add Setter for User
-    public void setUser(UserEntity user) {
-        this.user = user;
-    }
-
-    // ✅ Add Getter for User
-    public UserEntity getUser() {
-        return user;
-    }
 
 	public Cart(String sessionId) {
 		this.sessionId = sessionId;
@@ -81,6 +69,11 @@ public class Cart {
 		return sessionId;
 	}
 
+	// ✅ Add Getter for User
+	public UserEntity getUser() {
+		return user;
+	}
+
 	@PrePersist
 	protected void onCreate() {
 		this.createdAt = LocalDateTime.now();
@@ -98,6 +91,11 @@ public class Cart {
 
 	public void setSessionId(String sessionId) {
 		this.sessionId = sessionId;
+	}
+
+	// ✅ Add Setter for User
+	public void setUser(UserEntity user) {
+		this.user = user;
 	}
 
 }

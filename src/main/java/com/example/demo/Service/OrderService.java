@@ -1,5 +1,9 @@
 package com.example.demo.Service;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -20,96 +24,106 @@ import com.example.demo.model.Order;
 import com.example.demo.model.OrderItem;
 import com.example.demo.model.UserEntity;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 @Service
 public class OrderService {
 
-    @Autowired
-    private OrderRepository orderRepository;
+	@Autowired
+	private OrderRepository orderRepository;
 
-    @Autowired
-    private CartRepository cartRepository;
+	@Autowired
+	private CartRepository cartRepository;
 
-    @Autowired
-    private CartItemRepository cartItemRepository;
+	@Autowired
+	private CartItemRepository cartItemRepository;
 
-    @Autowired
-    private UserRepository userRepository;
+	@Autowired
+	private UserRepository userRepository;
 
-    @Transactional
-    public OrderResponseDto placeOrder(String username, OrderRequestDTO orderRequest) {
-        // Fetch user
-        UserEntity user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+	private OrderResponseDto convertToOrderResponseDTO(Order order) {
+		OrderResponseDto responseDTO = new OrderResponseDto();
+		responseDTO.setId(order.getId());
+		responseDTO.setUsername(order.getUser().getUsername());
+		responseDTO.setTotalAmount(order.getTotalAmount());
+		responseDTO.setShippingAddress(order.getAddress1() + ", " + order.getState());
+		responseDTO.setStatus(order.getStatus().name());
+		responseDTO.setCreatedAt(order.getCreatedAt());
 
-        // Get user's cart
-        Cart cart = cartRepository.findByUser(user)
-                .orElseThrow(() -> new RuntimeException("Cart is empty"));
+		List<OrderItemDto> itemDTOs = order.getItems().stream().map(item -> {
+			OrderItemDto itemDTO = new OrderItemDto();
+			itemDTO.setProductId(item.getProduct().getId());
+			itemDTO.setProductName(item.getProduct().getName());
+			itemDTO.setQuantity(item.getQuantity());
+			itemDTO.setPrice(item.getPrice());
+			return itemDTO;
+		}).collect(Collectors.toList());
 
-        if (cart.getItems().isEmpty()) {
-            throw new RuntimeException("Cart has no items to order");
-        }
+		responseDTO.setItems(itemDTOs);
+		return responseDTO;
+	}
 
-        // Get shipping details
-        ShippingdetailsDto shipping = orderRequest.getShippingDetails();
+	@Transactional
+	public OrderResponseDto placeOrder(String username, OrderRequestDTO orderRequest) {
+	    // Fetch user
+	    UserEntity user = userRepository.findByUsername(username)
+	            .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Create order and map cart items to order items
-        Order order = new Order();
-        order.setUser(user);
-        order.setFullName(shipping.getFullName());
-        order.setEmail(shipping.getEmail());
-        order.setPhoneNumber(shipping.getPhoneNumber());
-        order.setAddress1(shipping.getAddress1());
-        order.setAddress2(shipping.getAddress2());
-        order.setState(shipping.getState());
-        order.setPostalCode(shipping.getPostalCode());
-        order.setStatus(OrderStatus.PENDING);
+	    // Get user's cart
+	    Cart cart = cartRepository.findByUser(user)
+	            .orElseThrow(() -> new RuntimeException("Cart is empty"));
 
-        List<OrderItem> orderItems = cart.getItems().stream().map(cartItem -> {
-            OrderItem orderItem = new OrderItem();
-            orderItem.setOrder(order);
-            orderItem.setProduct(cartItem.getProduct());
-            orderItem.setQuantity(cartItem.getSelectedQuantity());
-            orderItem.setPrice(cartItem.getTotalPrice());
-            return orderItem;
-        }).collect(Collectors.toList());
+	    if (cart.getItems().isEmpty()) {
+	        throw new RuntimeException("Cart has no items to order");
+	    }
 
-        order.setItems(orderItems);
-        order.setTotalAmount(cart.getItems().stream().mapToDouble(CartItem::getTotalPrice).sum());
+	    // Get shipping details
+	    ShippingdetailsDto shipping = orderRequest.getShippingDetails();
 
-        // Save the order
-        orderRepository.save(order);
+	    // Create order
+	    Order order = new Order();
+	    order.setUser(user);
+	    order.setFullName(shipping.getFullName());
+	    order.setEmail(shipping.getEmail());
+	    order.setPhoneNumber(shipping.getPhoneNumber());
+	    order.setAddress1(shipping.getAddress1());
+	    order.setAddress2(shipping.getAddress2());
+	    order.setState(shipping.getState());
+	    order.setPostalCode(shipping.getPostalCode());
+	    order.setStatus(OrderStatus.PENDING);
 
-        // ✅ Now we delete the cart only after placing an order
-        cartItemRepository.deleteAll(cart.getItems());
-        cartRepository.delete(cart);
+	    // Convert cart items to order items with BigDecimal
+	    List<OrderItem> orderItems = cart.getItems().stream().map(cartItem -> {
+	        OrderItem orderItem = new OrderItem();
+	        orderItem.setOrder(order);
+	        orderItem.setProduct(cartItem.getProduct());
+	        orderItem.setQuantity(cartItem.getSelectedQuantity());
+	        
+	        // Convert to BigDecimal if cart uses double
+	        BigDecimal itemPrice = cartItem.getTotalPrice() != null ?
+	            cartItem.getTotalPrice() : // Assuming CartItem now uses BigDecimal
+	            BigDecimal.valueOf(cartItem.getTotalPriceAsDouble()); // Fallback for legacy
+	        
+	        orderItem.setPrice(itemPrice);
+	        return orderItem;
+	    }).collect(Collectors.toList());
 
-        // Convert to DTO response
-        return convertToOrderResponseDTO(order);
-    }
+	    order.setItems(orderItems);
+	    
+	    // Calculate total amount
+	 // Calculate total amount properly
+	    BigDecimal total = order.getItems().stream()
+	            .map(item -> item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
+	            .reduce(BigDecimal.ZERO, BigDecimal::add)
+	            .setScale(2, RoundingMode.HALF_UP);
+	    
+	    order.setTotalAmount(total);
 
+	    // Save the order
+	    orderRepository.save(order);
 
-    private OrderResponseDto convertToOrderResponseDTO(Order order) {
-        OrderResponseDto responseDTO = new OrderResponseDto();
-        responseDTO.setId(order.getId());
-        responseDTO.setUsername(order.getUser().getUsername());
-        responseDTO.setTotalAmount(order.getTotalAmount());
-        responseDTO.setShippingAddress(order.getAddress1() + ", " + order.getState());
-        responseDTO.setStatus(order.getStatus().name());
-        responseDTO.setCreatedAt(order.getCreatedAt());
+	    // Clear the cart
+	    cartItemRepository.deleteAll(cart.getItems());
+	    cartRepository.delete(cart);
 
-        List<OrderItemDto> itemDTOs = order.getItems().stream().map(item -> {
-            OrderItemDto itemDTO = new OrderItemDto();
-            itemDTO.setProductId(item.getProduct().getId());
-            itemDTO.setProductName(item.getProduct().getName());
-            itemDTO.setQuantity(item.getQuantity());
-            itemDTO.setPrice(item.getPrice());
-            return itemDTO;
-        }).collect(Collectors.toList());
-
-        responseDTO.setItems(itemDTOs);
-        return responseDTO;
-    }
+	    return convertToOrderResponseDTO(order);
+	}
 }

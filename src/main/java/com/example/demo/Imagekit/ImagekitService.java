@@ -30,6 +30,16 @@ public class ImagekitService {
 		this.imageKit = imageKit;
 	}
 
+	public boolean deleteFileFromImageKit(String fileId) {
+		try {
+			imageKit.deleteFile(fileId);
+			return true;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return false;
+		}
+	}
+
 	public String uploadFile(MultipartFile file) throws IOException, InternalServerException, BadRequestException,
 			UnknownException, ForbiddenException, TooManyRequestsException, UnauthorizedException {
 
@@ -86,17 +96,5 @@ public class ImagekitService {
 			throw new IOException("Failed to upload image to ImageKit");
 		}
 	}
-
-	public boolean deleteFileFromImageKit(String fileId) {
-	    try {
-	        imageKit.deleteFile(fileId);
-	        return true;
-	    } catch (Exception e) {
-	        e.printStackTrace();
-	        return false;
-	    }
-	}
-
-
 
 }

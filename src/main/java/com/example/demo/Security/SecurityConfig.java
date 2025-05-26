@@ -1,6 +1,5 @@
 package com.example.demo.Security;
 
-
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,10 +36,9 @@ public class SecurityConfig {
 
 	@Bean
 	public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration)
-	        throws Exception {
-	    return authenticationConfiguration.getAuthenticationManager();
+			throws Exception {
+		return authenticationConfiguration.getAuthenticationManager();
 	}
-
 
 	@Bean
 	public AuthenticationProvider authenticationProvider() {
@@ -73,28 +71,22 @@ public class SecurityConfig {
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 		http.csrf(csrf -> csrf.disable()).cors(cors -> cors.configurationSource(corsConfigurationSource())) // Add CORS
 																											// configuration
-		.authorizeHttpRequests(auth -> auth
-			    .requestMatchers("/api/auth/register", "/api/auth/login1", "/api/**").permitAll()
-			    .requestMatchers(HttpMethod.GET, "/api/cart/items").permitAll()
-			    .requestMatchers(HttpMethod.DELETE, "/api/cart/remove").permitAll() // ✅ Allow guests to remove
-			    .requestMatchers(HttpMethod.GET, "/api/cart/count").permitAll()
-			    .requestMatchers(HttpMethod.DELETE, "/api/cart/clear-session").permitAll()
-			    // ✅ Allow guests to count
-			    .requestMatchers("/api/place").authenticated() // Only logged-in users can place orders
-			    .anyRequest().authenticated()
-			)
-			.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-			.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
-			.authenticationProvider(authenticationProvider())
-			.logout(logout -> logout.logoutUrl("/api/logout")
-			    .logoutSuccessHandler((request, response, authentication) -> {
-			        response.setStatus(HttpServletResponse.SC_OK);
-			    })
-			    .invalidateHttpSession(true)
-			    .deleteCookies("JSESSIONID")
-			    .permitAll()
-			);
-
+				.authorizeHttpRequests(auth -> auth.requestMatchers("/api/auth/register", "/api/auth/login1", "/api/**")
+						.permitAll().requestMatchers(HttpMethod.GET, "/api/cart/items").permitAll()
+						.requestMatchers(HttpMethod.DELETE, "/api/cart/remove").permitAll() // ✅ Allow guests to remove
+						.requestMatchers(HttpMethod.GET, "/api/cart/count").permitAll()
+						.requestMatchers(HttpMethod.POST, "/api/cart/logout").permitAll()
+						// ✅ Allow guests to count
+						.requestMatchers("/api/place", "/api/auth/change-password1").authenticated() // Only logged-in
+																										// users can
+																										// place orders
+						.anyRequest().authenticated())
+				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+				.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+				.authenticationProvider(authenticationProvider()).logout(logout -> logout.logoutUrl("/api/logout")
+						.logoutSuccessHandler((request, response, authentication) -> {
+							response.setStatus(HttpServletResponse.SC_OK);
+						}).invalidateHttpSession(true).deleteCookies("JSESSIONID").permitAll());
 
 		return http.build();
 	}

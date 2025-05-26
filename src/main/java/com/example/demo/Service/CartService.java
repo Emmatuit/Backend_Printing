@@ -1,5 +1,6 @@
 package com.example.demo.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
@@ -33,7 +34,6 @@ import com.example.demo.model.Specification;
 import com.example.demo.model.SpecificationOption;
 import com.example.demo.model.UserEntity;
 
-import jakarta.servlet.http.HttpSession;
 import jakarta.transaction.Transactional;
 
 @Service
@@ -71,118 +71,130 @@ public class CartService {
 	@Autowired
 	private SpecificationOptionService specificationOptionService;
 
-
-
 	@Autowired
 	private DesignRequestRepository designRequestRepository;
 
-//	public CartItemDto addItemToCart(String sessionId, CartItemDto cartItemDTO) {
-//		// Retrieve or create a cart
-//		Cart cart = cartRepository.findBySessionId(sessionId).orElseGet(() -> cartRepository.save(new Cart(sessionId)));
-//
-//		// Validate input
-//		if (cartItemDTO == null || cartItemDTO.getProduct() == null || cartItemDTO.getSelectedOptions() == null) {
-//			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Product or selected options cannot be null.");
-//		}
-//
-//		// Fetch product from database
-//		Product product = productRepository.findById(cartItemDTO.getProduct().getId())
-//				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found"));
-//
-//		// Fetch selected options
-//		List<SpecificationOption> selectedOptions = cartItemDTO.getSelectedOptions().stream()
-//				.map(optionDTO -> specificationOptionRepository.findById(optionDTO.getId())
-//						.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-//								"Selected option with ID " + optionDTO.getId() + " not found")))
-//				.collect(Collectors.toList());
-//
-//		// Validate selected options
-//		try {
-//			validateSelectedOptions(selectedOptions);
-//		} catch (IllegalArgumentException e) {
-//			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
-//		}
-//
-//		// Calculate valid quantity options
-//		List<Integer> validQuantities = calculationBased.generateQuantityOptions(product.getId());
-//		int selectedQuantity = cartItemDTO.getSelectedQuantity();
-//
-//		if (!validQuantities.contains(selectedQuantity)) {
-//			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-//					"Invalid quantity selected. Valid quantities are: " + validQuantities);
-//		}
-//
-//		// Calculate the total price
-//		List<Long> selectedOptionIds = selectedOptions.stream().map(SpecificationOption::getId).toList();
-//		double totalPrice = productService.calculateTotalPrice(product.getId(), selectedQuantity, selectedOptionIds);
-//
-//		// Create and add cart item
-//		CartItem cartItem = new CartItem(product, selectedQuantity, totalPrice, selectedOptions);
-//		cart.addItem(cartItem);
-//		cartRepository.save(cart); // Ensure cart is saved after modification
-//
-//		return convertToCartItemDTO(cartItem);
-//	}
+	@Autowired
+	private UserRepository userRepository;
 
-
-	@Transactional
+//	@Transactional
 	public CartItemDto addItemToCart(String sessionId, CartItemDto cartItemDTO, Long designRequestId) {
+		if (sessionId == null || sessionId.isBlank()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Session ID is required for guest users.");
+		}
 
-	    // Retrieve or create a cart
-	    Cart cart = cartRepository.findBySessionId(sessionId)
-	            .orElseGet(() -> cartRepository.save(new Cart(sessionId)));
+		if (cartItemDTO == null || cartItemDTO.getProduct() == null || cartItemDTO.getSelectedOptions() == null) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Product or selected options cannot be null.");
+		}
 
-	    // Validate input
-	    if (cartItemDTO == null || cartItemDTO.getProduct() == null || cartItemDTO.getSelectedOptions() == null) {
-	        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Product or selected options cannot be null.");
-	    }
+		// Retrieve or create cart for session
+		Cart cart = cartRepository.findBySessionId(sessionId)
+				.orElseGet(() -> cartRepository.save(new Cart(sessionId)));
 
-	    // Fetch product from database
-	    Product product = productRepository.findById(cartItemDTO.getProduct().getId())
-	            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found"));
+		// Fetch product
+		Product product = productRepository.findById(cartItemDTO.getProduct().getId())
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found"));
 
-	    // Fetch selected options
-	    List<SpecificationOption> selectedOptions = cartItemDTO.getSelectedOptions().stream()
-	            .map(optionDTO -> specificationOptionRepository.findById(optionDTO.getId())
-	                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-	                            "Selected option with ID " + optionDTO.getId() + " not found")))
-	            .collect(Collectors.toList());
+		// Fetch selected specification options
+		List<SpecificationOption> selectedOptions = cartItemDTO.getSelectedOptions().stream()
+				.map(optionDTO -> specificationOptionRepository.findById(optionDTO.getId())
+						.orElseThrow(() -> new ResponseStatusException(
+								HttpStatus.NOT_FOUND, "Selected option with ID " + optionDTO.getId() + " not found")))
+				.collect(Collectors.toList());
 
-	    // Validate selected options
-	    try {
-	        validateSelectedOptions(selectedOptions);
-	    } catch (IllegalArgumentException e) {
-	        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
-	    }
+		// Validate options
+		validateSelectedOptions(selectedOptions);
 
-	    // Validate Design Request
-	    DesignRequest designRequest = designRequestRepository.findById(designRequestId)
-	            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Design Request not found"));
+		// Validate design request
+		DesignRequest designRequest = designRequestRepository.findById(designRequestId)
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Design Request not found"));
 
-	    // Calculate valid quantity options
-	    List<Integer> validQuantities = calculationBased.generateQuantityOptions(product.getId());
-	    int selectedQuantity = cartItemDTO.getSelectedQuantity();
+		// Validate quantity
+		int selectedQuantity = cartItemDTO.getSelectedQuantity();
+		List<Integer> validQuantities = calculationBased.generateQuantityOptions(product.getId());
+		if (!validQuantities.contains(selectedQuantity)) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+					"Invalid quantity selected. Valid quantities are: " + validQuantities);
+		}
 
-	    if (!validQuantities.contains(selectedQuantity)) {
-	        throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-	                "Invalid quantity selected. Valid quantities are: " + validQuantities);
-	    }
+		// Calculate total price
+		List<Long> selectedOptionIds = selectedOptions.stream()
+				.map(SpecificationOption::getId)
+				.toList();
+		BigDecimal totalPrice = productService.calculateTotalPrice(product.getId(), selectedQuantity, selectedOptionIds);
 
-	    // Calculate the total price
-	    List<Long> selectedOptionIds = selectedOptions.stream().map(SpecificationOption::getId).toList();
-	    double totalPrice = productService.calculateTotalPrice(product.getId(), selectedQuantity, selectedOptionIds);
+		// Create and add CartItem
+		CartItem cartItem = new CartItem(product, selectedQuantity, totalPrice, selectedOptions);
+		cartItem.setDesignRequest(designRequest);
+		cart.addItem(cartItem);
 
-	    // Create and add cart-item
-	    CartItem cartItem = new CartItem(product, selectedQuantity, totalPrice, selectedOptions);
-	    cartItem.setDesignRequest(designRequest); // Attach Design Request
-	    cart.addItem(cartItem);
-	    cartRepository.save(cart); // Ensure cart is saved after modification
+		// Save cart with new item
+		cartRepository.save(cart);
 
-	    return convertToCartItemDTO(cartItem);
-}
+		return convertToCartItemDTO(cartItem);
+	}
 
+	//=====================================================================//
+	@Transactional
+	public CartItemDto addItemToUserCart(UserEntity user, CartItemDto cartItemDTO, Long designRequestId) {
+		if (user == null) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User cannot be null.");
+		}
 
+		if (cartItemDTO == null || cartItemDTO.getProduct() == null || cartItemDTO.getSelectedOptions() == null) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Product or selected options cannot be null.");
+		}
 
+		// Get or create user's cart
+		Cart cart = cartRepository.findByUser(user)
+				.orElseGet(() -> {
+					Cart newCart = new Cart();
+					newCart.setUser(user);
+					return cartRepository.save(newCart);
+				});
+
+		// Fetch product
+		Product product = productRepository.findById(cartItemDTO.getProduct().getId())
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found"));
+
+		// Fetch selected specification options
+		List<SpecificationOption> selectedOptions = cartItemDTO.getSelectedOptions().stream()
+				.map(optionDTO -> specificationOptionRepository.findById(optionDTO.getId())
+						.orElseThrow(() -> new ResponseStatusException(
+								HttpStatus.NOT_FOUND, "Selected option with ID " + optionDTO.getId() + " not found")))
+				.collect(Collectors.toList());
+
+		// Validate options
+		validateSelectedOptions(selectedOptions);
+
+		// Validate design request
+		DesignRequest designRequest = designRequestRepository.findById(designRequestId)
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Design Request not found"));
+
+		// Validate quantity
+		int selectedQuantity = cartItemDTO.getSelectedQuantity();
+		List<Integer> validQuantities = calculationBased.generateQuantityOptions(product.getId());
+		if (!validQuantities.contains(selectedQuantity)) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+					"Invalid quantity selected. Valid quantities are: " + validQuantities);
+		}
+
+		// Calculate total price
+		List<Long> selectedOptionIds = selectedOptions.stream()
+				.map(SpecificationOption::getId)
+				.toList();
+		BigDecimal totalPrice = productService.calculateTotalPrice(product.getId(), selectedQuantity, selectedOptionIds);
+
+		// Create and add CartItem
+		CartItem cartItem = new CartItem(product, selectedQuantity, totalPrice, selectedOptions);
+		cartItem.setDesignRequest(designRequest);
+		cart.addItem(cartItem);
+
+		// Save cart with new item
+		cartRepository.save(cart);
+
+		return convertToCartItemDTO(cartItem);
+	}
 
 	@Scheduled(cron = "0 0 */1 * * *") // Every hour (use this as a realistic testing interval)
 	public void clearExpiredCarts() {
@@ -228,14 +240,10 @@ public class CartService {
 		);
 	}
 
-
-
 	// ✅ Convert SpecificationOption -> SpecificationOptionDTO
 	private SpecificationOptionDTO convertToSpecificationOptionDto(SpecificationOption option) {
 		return new SpecificationOptionDTO(option.getId(), option.getName(), option.getPrice(), option.getImage());
 	}
-
-
 
 	// Helper method to convert SpecificationOption to SpecificationOptionDTO
 	private SpecificationOptionDTO convertToSpecificationOptionDTO(SpecificationOption option) {
@@ -247,91 +255,31 @@ public class CartService {
 		return optionDTO;
 	}
 
-
-
 	public List<CartItemDto> getAllCartItems(String sessionId) {
-	    // Fetch the cart by sessionId (return empty if not found)
-	    Cart cart = getCartBySessionId(sessionId);
+		// Fetch the cart by sessionId (return empty if not found)
+		Cart cart = getCartBySessionId(sessionId);
 
-	    // If cart is not found OR cart has no items, return an empty list
-	    if (cart == null || cart.getItems().isEmpty()) {
-	        return Collections.emptyList();
-	    }
-	    // Convert cart items to DTOs
-	    return cart.getItems().stream().map(this::toDto).collect(Collectors.toList());
+		// If cart is not found OR cart has no items, return an empty list
+		if (cart == null || cart.getItems().isEmpty()) {
+			return Collections.emptyList();
+		}
+		// Convert cart items to DTOs
+		return cart.getItems().stream().map(this::toDto).collect(Collectors.toList());
 	}
-	
+
 	public List<CartItemDto> getAllCartItemsByUser(UserEntity user) {
-	    Cart cart = cartRepository.findByUser(user)
-	            .orElse(null); // Return null if no cart is found
+		Cart cart = cartRepository.findByUser(user).orElse(null); // Return null if no cart is found
 
-	    if (cart == null || cart.getItems().isEmpty()) {
-	        return Collections.emptyList();
-	    }
+		if (cart == null || cart.getItems().isEmpty()) {
+			return Collections.emptyList();
+		}
 
-	    return cart.getItems().stream()
-	            .map(this::toDto)
-	            .collect(Collectors.toList());
+		return cart.getItems().stream().map(this::toDto).collect(Collectors.toList());
 	}
-	
-	
-
-
 
 	public Cart getCartBySessionId(String sessionId) {
-	    return cartRepository.findBySessionId(sessionId).orElse(null);
+		return cartRepository.findBySessionId(sessionId).orElse(null);
 	}
-
-
-
-	public int getCartItemCount(String sessionId) {
-	    Cart cart = cartRepository.findBySessionId(sessionId).orElse(null);
-	    return cart != null ? cart.getItems().size() : 0;
-	}
-
-
-	private CartItemDto toDto(CartItem cartItem) {
-	    CartItemDto dto = new CartItemDto();
-
-	    // Convert CartItem's product to ProductDto (including specifications)
-	    Product product = cartItem.getProduct();
-	    ProductDto productDto = new ProductDto(product.getId(), product.getName(), product.getDescription(),
-	            product.getBaseprice(), product.getMinOrderquantity(), product.getMaxQuantity(),
-	            product.getIncrementStep(), product.getSubcategory() != null ? product.getSubcategory().getId() : null, // Prevent null
-	            product.getCategory() != null ? product.getCategory().getId() : null, // Prevent null
-	            product.getEncryptedImages(), product.getSpecifications() != null ? product.getSpecifications().stream()
-	                    .map(this::convertToSpecificationDto).collect(Collectors.toList()) : Collections.emptyList() // Prevent null issues
-	    );
-
-	    // Set the converted productDto
-	    dto.setProduct(productDto);
-
-	    // Convert selected options (if any) to SpecificationOptionDTO
-	    List<SpecificationOptionDTO> selectedOptions = cartItem.getSelectedOptions() != null ? cartItem
-	            .getSelectedOptions().stream().map(this::convertToSpecificationOptionDto).collect(Collectors.toList())
-	            : Collections.emptyList(); // Prevent null issues
-
-	    dto.setSelectedOptions(selectedOptions);
-
-	    // Set the selected quantity
-	    dto.setSelectedQuantity(cartItem.getSelectedQuantity());
-
-	    // Get the selected option IDs (from selectedOptions)
-	    List<Long> selectedOptionIds = cartItem.getSelectedOptions().stream()
-	            .map(SpecificationOption::getId)
-	            .collect(Collectors.toList());
-
-	    // Calculate the total price and set it
-	    Double calculatedPrice = productService.calculateTotalPrice(
-	            cartItem.getProduct().getId(),
-	            cartItem.getSelectedQuantity(),
-	            selectedOptionIds // Pass the correct List<Long> here
-	    );
-	    dto.setTotalPrice(calculatedPrice); // Set the total price
-
-	    return dto;
-	}
-
 
 // // Scheduled to run daily at midnight
 //    @Scheduled(cron = "0 0 0 * * ?")
@@ -397,62 +345,85 @@ public class CartService {
 //			System.out.println("Cart updated after item removal.");
 //		}
 //	}
+	
 
 
+	@Transactional
+	public void mergeSessionCartWithUser(String email, String sessionId) {
+		UserEntity user = userRepository.findByEmail(email)
+				.orElseThrow(() -> new RuntimeException("User with Email not found"));
 
-	    @Autowired
-	    private UserRepository userRepository;
+		System.out.println("🔹 Merging cart for user: " + email);
+		System.out.println("🔹 Provided sessionId: " + sessionId);
 
+		if (sessionId == null) {
+			System.out.println("❌ No session ID provided, skipping merge.");
+			return;
+		}
 
+		Optional<Cart> sessionCartOpt = cartRepository.findBySessionId(sessionId);
+		if (sessionCartOpt.isEmpty()) {
+			System.out.println("❌ No cart found for sessionId: " + sessionId);
+			return;
+		}
 
-	    @Transactional
-	    public void mergeSessionCartWithUser(String username, HttpSession session) {
-	        UserEntity user = userRepository.findByUsername(username)
-	                .orElseThrow(() -> new RuntimeException("User not found"));
+		Cart sessionCart = sessionCartOpt.get();
+		System.out.println("✅ Found cart for sessionId: " + sessionId);
 
-	        // ✅ Retrieve sessionId from session
-	        String sessionId = (String) session.getAttribute("sessionId");
-	        System.out.println("🔹 Merging cart for user: " + username);
-	        System.out.println("🔹 Retrieved sessionId: " + sessionId);
+		Cart userCart = cartRepository.findByUser(user).orElseGet(() -> {
+			Cart newCart = new Cart();
+			newCart.setUser(user);
+			return cartRepository.save(newCart);
+		});
 
-	        if (sessionId == null) {
-	            System.out.println("❌ No session ID found, skipping merge.");
-	            return;
-	        }
+		userCart.getItems().addAll(sessionCart.getItems());
+		sessionCart.getItems().forEach(item -> item.setCart(userCart));
 
-	        // ✅ Find cart linked to sessionId
-	        Optional<Cart> sessionCartOpt = cartRepository.findBySessionId(sessionId);
-	        if (sessionCartOpt.isEmpty()) {
-	            System.out.println("❌ No cart found for sessionId: " + sessionId);
-	            return;
-	        }
+		cartRepository.save(userCart);
+		cartRepository.delete(sessionCart); // Clear session cart after merge
 
-	        Cart sessionCart = sessionCartOpt.get();
-	        System.out.println("✅ Found cart for sessionId: " + sessionId);
+		System.out.println("✅ Cart merged successfully for user: " + email);
+	}
 
-	        // ✅ Find existing user cart or create a new one
-	        Cart userCart = cartRepository.findByUser(user)
-	                .orElseGet(() -> {
-	                    Cart newCart = new Cart();
-	                    newCart.setUser(user);
-	                    return cartRepository.save(newCart);
-	                });
+	private CartItemDto toDto(CartItem cartItem) {
+		CartItemDto dto = new CartItemDto();
 
-	        // ✅ Move all sessionCart items to userCart (use `addAll()` for batch efficiency)
-	        userCart.getItems().addAll(sessionCart.getItems());
-	        sessionCart.getItems().forEach(item -> item.setCart(userCart));
+		// Convert CartItem's product to ProductDto (including specifications)
+		Product product = cartItem.getProduct();
+		ProductDto productDto = new ProductDto(product.getId(), product.getName(), product.getDescription(),
+				product.getBaseprice(), product.getMinOrderquantity(), product.getMaxQuantity(),
+				product.getIncrementStep(), product.getSubcategory() != null ? product.getSubcategory().getId() : null,
+				product.getCategory() != null ? product.getCategory().getId() : null, product.getEncryptedImages(),
+				product.getSpecifications() != null ? product.getSpecifications().stream()
+						.map(this::convertToSpecificationDto).collect(Collectors.toList()) : Collections.emptyList(),
+				product.getViews(), // Added views here
+				product.getCreatedAt() // Added createdAt here
+		);
 
-	        // ✅ Save merged cart
-	        cartRepository.save(userCart);
+		// Set the converted productDto
+		dto.setProduct(productDto);
 
-	        // ✅ Remove sessionId from session
-	        session.removeAttribute("sessionId");
+		// Convert selected options (if any) to SpecificationOptionDTO
+		List<SpecificationOptionDTO> selectedOptions = cartItem.getSelectedOptions() != null ? cartItem
+				.getSelectedOptions().stream().map(this::convertToSpecificationOptionDto).collect(Collectors.toList())
+				: Collections.emptyList(); // Prevent null issues
 
-	        // ✅ Delete old session cart (IMPORTANT to prevent duplicate carts)
-	        cartRepository.delete(sessionCart);
+		dto.setSelectedOptions(selectedOptions);
 
-	        System.out.println("✅ Cart merged successfully for user: " + username);
-	    }
+		// Set the selected quantity
+		dto.setSelectedQuantity(cartItem.getSelectedQuantity());
 
-	    
+		// Get the selected option IDs (from selectedOptions)
+		List<Long> selectedOptionIds = cartItem.getSelectedOptions().stream().map(SpecificationOption::getId)
+				.collect(Collectors.toList());
+
+		// Calculate the total price and set it
+		BigDecimal calculatedPrice = productService.calculateTotalPrice(cartItem.getProduct().getId(),
+				cartItem.getSelectedQuantity(), selectedOptionIds // Pass the correct List<Long> here
+		);
+		dto.setTotalPrice(calculatedPrice); // Set the total price
+
+		return dto;
+	}
+
 }

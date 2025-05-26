@@ -7,20 +7,20 @@ public class CategoryDto {
 	private Long id;
 	private String name;
 	private String description;
-	private String encryptedImage; // To represent the image path or encryption
-	 private List<SubcategoryDto> subcategories = new ArrayList<>(); // List of subcategories
+	private List<String> encryptedImages;// To represent the image path or encryption
+	private List<SubcategoryDto> subcategories = new ArrayList<>(); // List of subcategories
 
 	public CategoryDto() {
 		// TODO Auto-generated constructor stub
 	}
 
-	public CategoryDto(Long id, String name, String description, String encryptedImage,
+	public CategoryDto(Long id, String name, String description, List<String> encryptedImages,
 			List<SubcategoryDto> subcategories) {
 		super();
 		this.id = id;
 		this.name = name;
 		this.description = description;
-		this.encryptedImage = encryptedImage;
+		this.encryptedImages = encryptedImages;
 		this.subcategories = subcategories;
 	}
 
@@ -28,8 +28,8 @@ public class CategoryDto {
 		return description;
 	}
 
-	public String getEncryptedImage() {
-		return encryptedImage;
+	public List<String> getEncryptedImages() {
+		return encryptedImages;
 	}
 
 	public Long getId() {
@@ -48,8 +48,8 @@ public class CategoryDto {
 		this.description = description;
 	}
 
-	public void setEncryptedImage(String encryptedImage) {
-		this.encryptedImage = encryptedImage;
+	public void setEncryptedImages(List<String> encryptedImages) {
+		this.encryptedImages = encryptedImages;
 	}
 
 	public void setId(Long id) {

@@ -68,8 +68,10 @@ public class SubcategoryService {
 				product.getMinOrderquantity(), product.getMaxQuantity(), product.getIncrementStep(),
 				product.getSubcategory() != null ? product.getSubcategory().getId() : null, // Prevent null issues
 				product.getCategory() != null ? product.getCategory().getId() : null, // Prevent null issues
-				product.getEncryptedImages(), specificationDTOs // ✅ Include specifications
+				product.getEncryptedImages(), specificationDTOs, product.getViews(), // Add views here
+				product.getCreatedAt() // Add createdAt here
 		);
+
 	}
 
 	// ✅ Convert Specification -> SpecificationDTO
