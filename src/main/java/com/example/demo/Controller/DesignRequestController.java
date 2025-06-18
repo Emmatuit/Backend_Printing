@@ -58,7 +58,7 @@ public class DesignRequestController {
 	}
 
 	@DeleteMapping("/delete/{id}")
-	public ResponseEntity<String> deleteDesignRequest(@PathVariable Long id) {
+	public ResponseEntity<String> deleteDesignRequest(@PathVariable("id") Long id) {
 		Optional<DesignRequest> optionalDesignRequest = designRequestRepository.findById(id);
 
 		if (optionalDesignRequest.isPresent()) {
@@ -92,8 +92,7 @@ public class DesignRequestController {
 	}
 
 	@PostMapping("/upload")
-	public ResponseEntity<?> uploadDesignRequest(@RequestParam("file") MultipartFile file,
-			@RequestParam("description") String description) {
+	public ResponseEntity<?> uploadDesignRequest(@RequestParam("file") MultipartFile file, @RequestParam("description") String description) {
 
 		try {
 			// Validate file size (Max 10MB)

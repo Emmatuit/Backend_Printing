@@ -7,76 +7,83 @@ import java.time.LocalDateTime;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 public class OrderItemDto {
-    private Long productId;
-    private String productName;
-    private int quantity;
-    
-    @JsonFormat(shape = JsonFormat.Shape.STRING)
-    private BigDecimal price;  // Changed from double to BigDecimal
-    
-    @JsonFormat(shape = JsonFormat.Shape.STRING)
-    private BigDecimal subTotal; // price * quantity
-    
-    private LocalDateTime createdAt;
-    
-    
+	private Long productId;
+	private String productName;
+	private int quantity;
 
-    public OrderItemDto() {
-    	this.price = BigDecimal.ZERO;
-        this.subTotal = BigDecimal.ZERO;
-        this.createdAt = LocalDateTime.now();
-    }
+	@JsonFormat(shape = JsonFormat.Shape.STRING)
+	private BigDecimal price; // Changed from double to BigDecimal
 
-    // Getters and Setters
-    public Long getProductId() {
-        return productId;
-    }
+	@JsonFormat(shape = JsonFormat.Shape.STRING)
+	private BigDecimal subTotal; // price * quantity
 
-    public void setProductId(Long productId) {
-        this.productId = productId;
-    }
+	private LocalDateTime createdAt;
 
-    public String getProductName() {
-        return productName;
-    }
 
-    public void setProductName(String productName) {
-        this.productName = productName;
-    }
 
-    public int getQuantity() {
-        return quantity;
-    }
 
-    public void setQuantity(int quantity) {
-        this.quantity = quantity;
-    }
 
-    public BigDecimal getPrice() {
-        return price;
-    }
-
-    public void setPrice(BigDecimal price) {
-        this.price = price != null ? 
-            price.setScale(2, RoundingMode.HALF_UP) : BigDecimal.ZERO;
-    }
-
-	public BigDecimal getSubTotal() {
-		return subTotal;
+	public OrderItemDto() {
+		this.price = BigDecimal.ZERO;
+		this.subTotal = BigDecimal.ZERO;
+		this.createdAt = LocalDateTime.now();
 	}
 
-	public void setSubTotal(BigDecimal subTotal) {
-		this.subTotal = subTotal;
+	public OrderItemDto(Long productId, String productName, int quantity, BigDecimal price) {
+		super();
+		this.productId = productId;
+		this.productName = productName;
+		this.quantity = quantity;
+		this.price = price;
 	}
 
 	public LocalDateTime getCreatedAt() {
 		return createdAt;
 	}
 
+	public BigDecimal getPrice() {
+		return price;
+	}
+
+	// Getters and Setters
+	public Long getProductId() {
+		return productId;
+	}
+
+	public String getProductName() {
+		return productName;
+	}
+
+	public int getQuantity() {
+		return quantity;
+	}
+
+	public BigDecimal getSubTotal() {
+		return subTotal;
+	}
+
 	public void setCreatedAt(LocalDateTime createdAt) {
 		this.createdAt = createdAt;
 	}
-	
-    
-    
+
+	public void setPrice(BigDecimal price) {
+		this.price = price != null ? price.setScale(2, RoundingMode.HALF_UP) : BigDecimal.ZERO;
+	}
+
+	public void setProductId(Long productId) {
+		this.productId = productId;
+	}
+
+	public void setProductName(String productName) {
+		this.productName = productName;
+	}
+
+	public void setQuantity(int quantity) {
+		this.quantity = quantity;
+	}
+
+	public void setSubTotal(BigDecimal subTotal) {
+		this.subTotal = subTotal;
+	}
+
 }

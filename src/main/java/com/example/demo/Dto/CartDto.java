@@ -9,21 +9,33 @@ public class CartDto {
 	private String sessionId;
 	private List<CartItemDto> items;
 	private BigDecimal cartTotal;
-    private BigDecimal taxAmount;
-    private BigDecimal shippingFee;
-    private BigDecimal grandTotal;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+	private BigDecimal taxAmount;
+	private BigDecimal shippingFee;
+	private BigDecimal grandTotal;
+	private LocalDateTime createdAt;
+	private LocalDateTime updatedAt;
 
 	public CartDto() {
 		this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
+		this.updatedAt = LocalDateTime.now();
 	}
 
 	public CartDto(Long id, String sessionId, List<CartItemDto> items) {
 		this.id = id;
 		this.sessionId = sessionId;
 		this.items = items;
+	}
+
+	public BigDecimal getCartTotal() {
+		return cartTotal;
+	}
+
+	public LocalDateTime getCreatedAt() {
+		return createdAt;
+	}
+
+	public BigDecimal getGrandTotal() {
+		return grandTotal;
 	}
 
 	// Getters and Setters
@@ -39,6 +51,30 @@ public class CartDto {
 		return sessionId;
 	}
 
+	public BigDecimal getShippingFee() {
+		return shippingFee;
+	}
+
+	public BigDecimal getTaxAmount() {
+		return taxAmount;
+	}
+
+	public LocalDateTime getUpdatedAt() {
+		return updatedAt;
+	}
+
+	public void setCartTotal(BigDecimal cartTotal) {
+		this.cartTotal = cartTotal;
+	}
+
+	public void setCreatedAt(LocalDateTime createdAt) {
+		this.createdAt = createdAt;
+	}
+
+	public void setGrandTotal(BigDecimal grandTotal) {
+		this.grandTotal = grandTotal;
+	}
+
 	public void setId(Long id) {
 		this.id = id;
 	}
@@ -51,53 +87,16 @@ public class CartDto {
 		this.sessionId = sessionId;
 	}
 
-	public BigDecimal getCartTotal() {
-		return cartTotal;
-	}
-
-	public void setCartTotal(BigDecimal cartTotal) {
-		this.cartTotal = cartTotal;
-	}
-
-	public BigDecimal getTaxAmount() {
-		return taxAmount;
+	public void setShippingFee(BigDecimal shippingFee) {
+		this.shippingFee = shippingFee;
 	}
 
 	public void setTaxAmount(BigDecimal taxAmount) {
 		this.taxAmount = taxAmount;
 	}
 
-	public BigDecimal getShippingFee() {
-		return shippingFee;
-	}
-
-	public void setShippingFee(BigDecimal shippingFee) {
-		this.shippingFee = shippingFee;
-	}
-
-	public BigDecimal getGrandTotal() {
-		return grandTotal;
-	}
-
-	public void setGrandTotal(BigDecimal grandTotal) {
-		this.grandTotal = grandTotal;
-	}
-
-	public LocalDateTime getCreatedAt() {
-		return createdAt;
-	}
-
-	public void setCreatedAt(LocalDateTime createdAt) {
-		this.createdAt = createdAt;
-	}
-
-	public LocalDateTime getUpdatedAt() {
-		return updatedAt;
-	}
-
 	public void setUpdatedAt(LocalDateTime updatedAt) {
 		this.updatedAt = updatedAt;
 	}
-	
-	
+
 }

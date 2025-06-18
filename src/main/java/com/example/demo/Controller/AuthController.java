@@ -35,6 +35,7 @@ import com.example.demo.Repository.UserRepository;
 import com.example.demo.Security.JwtService;
 import com.example.demo.Service.CartService;
 import com.example.demo.Service.ProductService;
+import com.example.demo.Service.WishlistService;
 import com.example.demo.model.UserEntity;
 
 import jakarta.servlet.http.HttpSession;
@@ -66,6 +67,68 @@ public class AuthController {
 
 	@Autowired
 	private EmailService emailService;
+
+	@Autowired
+	private WishlistService wishlistService;
+
+	@PostMapping("/change-password1")
+	public ResponseEntity<?> changePassword(@RequestBody ChangePasswordRequest request,
+			@AuthenticationPrincipal UserDetails userDetails) {
+		String email = userDetails.getUsername();
+		Optional<UserEntity> optionalUser = userRepository.findByEmail(email);
+
+		if (optionalUser.isEmpty()) {
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "User not found"));
+		}
+
+		UserEntity user = optionalUser.get();
+
+		if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
+			return ResponseEntity.badRequest().body(Map.of("error", "Old password is incorrect"));
+		}
+
+		user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+		userRepository.save(user);
+
+		return ResponseEntity.ok(Map.of("message", "Password changed successfully"));
+	}
+
+	@PostMapping("/forgot-password")
+	public ResponseEntity<?> forgotPassword(@RequestBody ForgotPasswordRequest request) {
+		String email = request.getEmail();
+		Optional<UserEntity> optionalUser = userRepository.findByEmail(email);
+
+		if (optionalUser.isEmpty()) {
+			return ResponseEntity.badRequest().body(Map.of("error", "Email not found"));
+		}
+
+		UserEntity user = optionalUser.get();
+
+		String resetCode = String.valueOf((int) (Math.random() * 9000) + 1000);
+		LocalDateTime expiry = LocalDateTime.now().plusMinutes(10);
+
+		user.setResetPasswordToken(resetCode);
+		user.setResetTokenExpiry(expiry);
+		userRepository.save(user);
+
+		String emailBody = "<p>Hello " + user.getUsername() + ",</p>" + "<p>Your password reset code is:</p>"
+				+ "<h2 style='color:blue;'>" + resetCode + "</h2>" + "<p>This code will expire in 10 minutes.</p>";
+
+		try {
+			emailService.sendVerificationEmail(user.getEmail(), "Password Reset Code", emailBody);
+
+			return ResponseEntity.ok(Map.of("message", "Password reset code sent", "expiry", expiry.toString()));
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body(Map.of("error", "Failed to send email: " + e.getMessage()));
+		}
+	}
+
+	public String generateVerificationCode() {
+		Random random = new Random();
+		int code = 100000 + random.nextInt(900000);
+		return String.valueOf(code);
+	}
 
 	@PostMapping("/login1")
 	public ResponseEntity<?> login(@RequestParam("email") String email, @RequestParam("password") String password,
@@ -100,6 +163,7 @@ public class AuthController {
 			// ✅ Merge session cart/history with logged-in user
 			cartService.mergeSessionCartWithUser(email, sessionId);
 			productService.mergeSessionHistoryWithUser(email, sessionId);
+			wishlistService.mergeSessionWishlistWithUser(email, sessionId); // ✅ Add this line
 
 			// ✅ Prepare response
 			Map<String, Object> response = new HashMap<>();
@@ -183,6 +247,36 @@ public class AuthController {
 		}
 	}
 
+	@PostMapping("/reset-password")
+	public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordRequest request) {
+		String email = request.getEmail();
+		String code = request.getToken();
+		String newPassword = request.getNewPassword();
+
+		Optional<UserEntity> optionalUser = userRepository.findByEmail(email);
+		if (optionalUser.isEmpty()) {
+			return ResponseEntity.badRequest().body(Map.of("error", "User not found"));
+		}
+
+		UserEntity user = optionalUser.get();
+
+		if (!code.equals(user.getResetPasswordToken())) {
+			return ResponseEntity.badRequest().body(Map.of("error", "Invalid reset code"));
+		}
+
+		if (user.getResetTokenExpiry() == null || user.getResetTokenExpiry().isBefore(LocalDateTime.now())) {
+			return ResponseEntity.badRequest().body(Map.of("error", "Reset code expired"));
+		}
+
+		user.setPassword(passwordEncoder.encode(newPassword));
+		user.setResetPasswordToken(null);
+		user.setResetTokenExpiry(null);
+
+		userRepository.save(user);
+
+		return ResponseEntity.ok(Map.of("message", "Password reset successful"));
+	}
+
 	@PostMapping("/verify-email")
 	public ResponseEntity<String> verifyEmail(@RequestBody EmailVerificationRequest request) {
 		Optional<UserEntity> optionalUser = userRepository.findByEmail(request.getEmail());
@@ -217,12 +311,6 @@ public class AuthController {
 		return ResponseEntity.ok("Email verified successfully!");
 	}
 
-	public String generateVerificationCode() {
-		Random random = new Random();
-		int code = 100000 + random.nextInt(900000);
-		return String.valueOf(code);
-	}
-
 	@PostMapping("/verify-reset-code")
 	public ResponseEntity<?> verifyResetCode(@RequestBody Map<String, String> request) {
 		String email = request.get("email");
@@ -244,89 +332,6 @@ public class AuthController {
 		}
 
 		return ResponseEntity.ok(Map.of("message", "Code verified"));
-	}
-
-	@PostMapping("/reset-password")
-	public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordRequest request) {
-		String email = request.getEmail();
-		String code = request.getToken();
-		String newPassword = request.getNewPassword();
-
-		Optional<UserEntity> optionalUser = userRepository.findByEmail(email);
-		if (optionalUser.isEmpty()) {
-			return ResponseEntity.badRequest().body(Map.of("error", "User not found"));
-		}
-
-		UserEntity user = optionalUser.get();
-
-		if (!code.equals(user.getResetPasswordToken())) {
-			return ResponseEntity.badRequest().body(Map.of("error", "Invalid reset code"));
-		}
-
-		if (user.getResetTokenExpiry() == null || user.getResetTokenExpiry().isBefore(LocalDateTime.now())) {
-			return ResponseEntity.badRequest().body(Map.of("error", "Reset code expired"));
-		}
-
-		user.setPassword(passwordEncoder.encode(newPassword));
-		user.setResetPasswordToken(null);
-		user.setResetTokenExpiry(null);
-
-		userRepository.save(user);
-
-		return ResponseEntity.ok(Map.of("message", "Password reset successful"));
-	}
-
-	@PostMapping("/forgot-password")
-	public ResponseEntity<?> forgotPassword(@RequestBody ForgotPasswordRequest request) {
-		String email = request.getEmail();
-		Optional<UserEntity> optionalUser = userRepository.findByEmail(email);
-
-		if (optionalUser.isEmpty()) {
-			return ResponseEntity.badRequest().body(Map.of("error", "Email not found"));
-		}
-
-		UserEntity user = optionalUser.get();
-
-		String resetCode = String.valueOf((int) (Math.random() * 9000) + 1000);
-		LocalDateTime expiry = LocalDateTime.now().plusMinutes(10);
-
-		user.setResetPasswordToken(resetCode);
-		user.setResetTokenExpiry(expiry);
-		userRepository.save(user);
-
-		String emailBody = "<p>Hello " + user.getUsername() + ",</p>" + "<p>Your password reset code is:</p>"
-				+ "<h2 style='color:blue;'>" + resetCode + "</h2>" + "<p>This code will expire in 10 minutes.</p>";
-
-		try {
-			emailService.sendVerificationEmail(user.getEmail(), "Password Reset Code", emailBody);
-
-			return ResponseEntity.ok(Map.of("message", "Password reset code sent", "expiry", expiry.toString()));
-		} catch (Exception e) {
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-					.body(Map.of("error", "Failed to send email: " + e.getMessage()));
-		}
-	}
-
-	@PostMapping("/change-password1")
-	public ResponseEntity<?> changePassword(@RequestBody ChangePasswordRequest request,
-			@AuthenticationPrincipal UserDetails userDetails) {
-		String email = userDetails.getUsername();
-		Optional<UserEntity> optionalUser = userRepository.findByEmail(email);
-
-		if (optionalUser.isEmpty()) {
-			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "User not found"));
-		}
-
-		UserEntity user = optionalUser.get();
-
-		if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
-			return ResponseEntity.badRequest().body(Map.of("error", "Old password is incorrect"));
-		}
-
-		user.setPassword(passwordEncoder.encode(request.getNewPassword()));
-		userRepository.save(user);
-
-		return ResponseEntity.ok(Map.of("message", "Password changed successfully"));
 	}
 
 }

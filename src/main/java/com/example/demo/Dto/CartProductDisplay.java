@@ -23,15 +23,18 @@ public class CartProductDisplay {
 		this.baseprice = baseprice != null ? baseprice.setScale(2, RoundingMode.HALF_UP) : null;
 	}
 
+	public BigDecimal getBaseprice() {
+		return baseprice;
+	}
+
 	// Backward compatibility for Double
 	@JsonIgnore
 	public Double getBasepriceAsDouble() {
 		return baseprice != null ? baseprice.doubleValue() : null;
 	}
 
-	@JsonIgnore
-	public void setBasepriceAsDouble(Double baseprice) {
-		this.baseprice = baseprice != null ? BigDecimal.valueOf(baseprice).setScale(2, RoundingMode.HALF_UP) : null;
+	public String getDescription() {
+		return description;
 	}
 
 	// Getters and Setters
@@ -39,23 +42,20 @@ public class CartProductDisplay {
 		return name;
 	}
 
-	public void setName(String name) {
-		this.name = name;
+	public void setBaseprice(BigDecimal baseprice) {
+		this.baseprice = baseprice != null ? baseprice.setScale(2, RoundingMode.HALF_UP) : null;
 	}
 
-	public String getDescription() {
-		return description;
+	@JsonIgnore
+	public void setBasepriceAsDouble(Double baseprice) {
+		this.baseprice = baseprice != null ? BigDecimal.valueOf(baseprice).setScale(2, RoundingMode.HALF_UP) : null;
 	}
 
 	public void setDescription(String description) {
 		this.description = description;
 	}
 
-	public BigDecimal getBaseprice() {
-		return baseprice;
-	}
-
-	public void setBaseprice(BigDecimal baseprice) {
-		this.baseprice = baseprice != null ? baseprice.setScale(2, RoundingMode.HALF_UP) : null;
+	public void setName(String name) {
+		this.name = name;
 	}
 }

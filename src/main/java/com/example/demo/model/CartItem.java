@@ -60,25 +60,6 @@ public class CartItem {
 		this.selectedOptions = selectedOptions != null ? selectedOptions : new ArrayList<>();
 	}
 
-	// Backward compatibility for double
-	public void setTotalPrice(double totalPrice) {
-		this.totalPrice = BigDecimal.valueOf(totalPrice).setScale(2, RoundingMode.HALF_UP);
-	}
-
-	@Transient
-	public double getTotalPriceAsDouble() {
-		return totalPrice != null ? totalPrice.doubleValue() : 0.0;
-	}
-
-	// Getters and Setters (other methods remain the same)
-	public BigDecimal getTotalPrice() {
-		return totalPrice;
-	}
-
-	public void setTotalPrice(BigDecimal totalPrice) {
-		this.totalPrice = totalPrice != null ? totalPrice.setScale(2, RoundingMode.HALF_UP) : BigDecimal.ZERO;
-	}
-
 	public Cart getCart() {
 		return cart;
 	}
@@ -103,6 +84,16 @@ public class CartItem {
 		return selectedQuantity;
 	}
 
+	// Getters and Setters (other methods remain the same)
+	public BigDecimal getTotalPrice() {
+		return totalPrice;
+	}
+
+	@Transient
+	public double getTotalPriceAsDouble() {
+		return totalPrice != null ? totalPrice.doubleValue() : 0.0;
+	}
+
 	public void setCart(Cart cart) {
 		this.cart = cart;
 	}
@@ -125,6 +116,15 @@ public class CartItem {
 
 	public void setSelectedQuantity(int selectedQuantity) {
 		this.selectedQuantity = selectedQuantity;
+	}
+
+	public void setTotalPrice(BigDecimal totalPrice) {
+		this.totalPrice = totalPrice != null ? totalPrice.setScale(2, RoundingMode.HALF_UP) : BigDecimal.ZERO;
+	}
+
+	// Backward compatibility for double
+	public void setTotalPrice(double totalPrice) {
+		this.totalPrice = BigDecimal.valueOf(totalPrice).setScale(2, RoundingMode.HALF_UP);
 	}
 
 }

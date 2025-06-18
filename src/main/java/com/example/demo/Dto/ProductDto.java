@@ -6,8 +6,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.example.demo.model.ImageInfo;
 import com.fasterxml.jackson.annotation.JsonFormat;
-
 
 public class ProductDto {
 	private long id;
@@ -16,13 +16,12 @@ public class ProductDto {
 
 	@JsonFormat(shape = JsonFormat.Shape.STRING)
 	private BigDecimal basePrice; // Changed from Double to BigDecimal
-
 	private Integer minOrderQuantity;
 	private Integer maxQuantity;
 	private Integer incrementStep;
 	private Long subcategoryId;
 	private Long categoryId;
-	private List<String> encryptedImages;
+	private List<ImageInfo> encryptedImages;
 	private List<SpecificationDTO> specifications;
 	private Long views;
 	private LocalDateTime createdAt;
@@ -35,7 +34,7 @@ public class ProductDto {
 
 	public ProductDto(long id, String name, String description, BigDecimal basePrice, Integer minOrderQuantity,
 			Integer maxQuantity, Integer incrementStep, Long subcategoryId, Long categoryId,
-			List<String> encryptedImages, List<SpecificationDTO> specifications, Long views, LocalDateTime createdAt) {
+			List<ImageInfo> encryptedImages, List<SpecificationDTO> specifications, Long views, LocalDateTime createdAt) {
 		this();
 		this.id = id;
 		this.name = name;
@@ -56,6 +55,26 @@ public class ProductDto {
 		this.createdAt = createdAt;
 	}
 
+	public BigDecimal getBasePrice() {
+		return basePrice;
+	}
+
+	public Long getCategoryId() {
+		return categoryId;
+	}
+
+	public LocalDateTime getCreatedAt() {
+		return createdAt;
+	}
+
+	public String getDescription() {
+		return description;
+	}
+
+	public List<ImageInfo> getEncryptedImages() {
+		return encryptedImages;
+	}
+
 	// Backward compatibility for Double
 //    @JsonIgnore
 //    public Double getBasePriceAsDouble() {
@@ -73,103 +92,83 @@ public class ProductDto {
 		return id;
 	}
 
-	public void setId(long id) {
-		this.id = id;
-	}
-
-	public String getName() {
-		return name;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public String getDescription() {
-		return description;
-	}
-
-	public void setDescription(String description) {
-		this.description = description;
-	}
-
-	public BigDecimal getBasePrice() {
-		return basePrice;
-	}
-
-	public void setBasePrice(BigDecimal basePrice) {
-		this.basePrice = basePrice != null ? basePrice.setScale(2, RoundingMode.HALF_UP) : null;
-	}
-
-	public Integer getMinOrderQuantity() {
-		return minOrderQuantity;
-	}
-
-	public void setMinOrderQuantity(Integer minOrderQuantity) {
-		this.minOrderQuantity = minOrderQuantity;
+	public Integer getIncrementStep() {
+		return incrementStep;
 	}
 
 	public Integer getMaxQuantity() {
 		return maxQuantity;
 	}
 
-	public void setMaxQuantity(Integer maxQuantity) {
-		this.maxQuantity = maxQuantity;
+	public Integer getMinOrderQuantity() {
+		return minOrderQuantity;
 	}
 
-	public Integer getIncrementStep() {
-		return incrementStep;
-	}
-
-	public void setIncrementStep(Integer incrementStep) {
-		this.incrementStep = incrementStep;
-	}
-
-	public Long getSubcategoryId() {
-		return subcategoryId;
-	}
-
-	public void setSubcategoryId(Long subcategoryId) {
-		this.subcategoryId = subcategoryId;
-	}
-
-	public Long getCategoryId() {
-		return categoryId;
-	}
-
-	public void setCategoryId(Long categoryId) {
-		this.categoryId = categoryId;
-	}
-
-	public List<String> getEncryptedImages() {
-		return encryptedImages;
-	}
-
-	public void setEncryptedImages(List<String> encryptedImages) {
-		this.encryptedImages = encryptedImages != null ? encryptedImages : new ArrayList<>();
+	public String getName() {
+		return name;
 	}
 
 	public List<SpecificationDTO> getSpecifications() {
 		return specifications;
 	}
 
-	public void setSpecifications(List<SpecificationDTO> specifications) {
-		this.specifications = specifications != null ? specifications : new ArrayList<>();
+	public Long getSubcategoryId() {
+		return subcategoryId;
 	}
 
 	public Long getViews() {
 		return views;
 	}
 
-	public void setViews(Long views) {
-		this.views = views;
+	public void setBasePrice(BigDecimal basePrice) {
+		this.basePrice = basePrice != null ? basePrice.setScale(2, RoundingMode.HALF_UP) : null;
 	}
 
-	public LocalDateTime getCreatedAt() {
-		return createdAt;
+	public void setCategoryId(Long categoryId) {
+		this.categoryId = categoryId;
 	}
 
 	public void setCreatedAt(LocalDateTime createdAt) {
 		this.createdAt = createdAt;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
+	}
+
+	public void setEncryptedImages(List<ImageInfo> encryptedImages) {
+		this.encryptedImages = encryptedImages != null ? encryptedImages : new ArrayList<>();
+	}
+
+	public void setId(long id) {
+		this.id = id;
+	}
+
+	public void setIncrementStep(Integer incrementStep) {
+		this.incrementStep = incrementStep;
+	}
+
+	public void setMaxQuantity(Integer maxQuantity) {
+		this.maxQuantity = maxQuantity;
+	}
+
+	public void setMinOrderQuantity(Integer minOrderQuantity) {
+		this.minOrderQuantity = minOrderQuantity;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public void setSpecifications(List<SpecificationDTO> specifications) {
+		this.specifications = specifications != null ? specifications : new ArrayList<>();
+	}
+
+	public void setSubcategoryId(Long subcategoryId) {
+		this.subcategoryId = subcategoryId;
+	}
+
+	public void setViews(Long views) {
+		this.views = views;
 	}
 }

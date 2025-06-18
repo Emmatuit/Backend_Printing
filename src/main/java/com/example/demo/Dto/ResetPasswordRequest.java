@@ -11,8 +11,8 @@ public class ResetPasswordRequest {
 		return Email;
 	}
 
-	public void setEmail(String email) {
-		Email = email;
+	public String getNewPassword() {
+		return newPassword;
 	}
 
 	// Getters and Setters
@@ -20,16 +20,16 @@ public class ResetPasswordRequest {
 		return token;
 	}
 
-	public void setToken(String token) {
-		this.token = token;
-	}
-
-	public String getNewPassword() {
-		return newPassword;
+	public void setEmail(String email) {
+		Email = email;
 	}
 
 	public void setNewPassword(String newPassword) {
 		this.newPassword = newPassword;
+	}
+
+	public void setToken(String token) {
+		this.token = token;
 	}
 
 }

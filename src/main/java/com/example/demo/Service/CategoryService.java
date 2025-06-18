@@ -1,10 +1,8 @@
 package com.example.demo.Service;
 
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.math.RoundingMode;
 import java.net.URL;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -27,6 +25,7 @@ import com.example.demo.Repository.CategoryRepository;
 import com.example.demo.Repository.ProductRepository;
 import com.example.demo.Repository.SubcategoryRepository;
 import com.example.demo.model.Category;
+import com.example.demo.model.ImageInfo;
 import com.example.demo.model.Product;
 import com.example.demo.model.Specification;
 import com.example.demo.model.SpecificationOption;
@@ -38,6 +37,7 @@ import io.imagekit.sdk.exceptions.InternalServerException;
 import io.imagekit.sdk.exceptions.TooManyRequestsException;
 import io.imagekit.sdk.exceptions.UnauthorizedException;
 import io.imagekit.sdk.exceptions.UnknownException;
+import io.imagekit.sdk.models.results.Result;
 
 @Service
 public class CategoryService {
@@ -55,33 +55,75 @@ public class CategoryService {
 	private ImagekitService imagekitService;
 
 	public Category addCategory(Category category) throws InternalServerException, BadRequestException,
-			UnknownException, ForbiddenException, TooManyRequestsException, UnauthorizedException {
-		// Check if a category with the same name already exists
-		if (categoryRepository.existsByName(category.getName())) {
-			throw new IllegalArgumentException("Category with this name already exists");
-		}
+    UnknownException, ForbiddenException, TooManyRequestsException, UnauthorizedException {
 
-		// MultipartFile
-		List<String> uploadedImageUrls = new ArrayList<>();
+if (categoryRepository.existsByName(category.getName())) {
+    throw new IllegalArgumentException("Category with this name already exists");
+}
 
-		for (String imageUrl : category.getEncryptedImages()) {
-			if (imageUrl != null && !imageUrl.isEmpty()) {
-				try (InputStream inputStream = new URL(imageUrl).openStream()) {
-					byte[] imageBytes = inputStream.readAllBytes();
-					MultipartFile multipartFile = createMultipartFileFromBytes(imageBytes, "image.jpg", "image/jpeg");
-					String uploadedUrl = imagekitService.uploadFile(multipartFile);
-					uploadedImageUrls.add(uploadedUrl);
-				} catch (IOException e) {
-					throw new RuntimeException("Failed to upload image: " + imageUrl, e);
-				}
-			}
-		}
+List<ImageInfo> uploadedImages = new ArrayList<>();
 
-		category.setEncryptedImages(uploadedImageUrls);
+// ✅ Temporarily receiving image URLs, not ImageInfo objects
+for (String imageUrl : category.getImages().stream().map(ImageInfo::getUrl).toList()) {
+    if (imageUrl != null && !imageUrl.isEmpty()) {
+        try (InputStream inputStream = new URL(imageUrl).openStream()) {
+            byte[] imageBytes = inputStream.readAllBytes();
+            MultipartFile multipartFile = createMultipartFileFromBytes(imageBytes, "image.jpg", "image/jpeg");
 
-		// Save the category in the database
-		return categoryRepository.save(category);
-	}
+            Result result = imagekitService.uploadFileWithResult(multipartFile);
+
+            if (result != null) {
+                ImageInfo imageInfo = new ImageInfo(result.getUrl(), result.getFileId());
+                uploadedImages.add(imageInfo);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to process image: " + imageUrl, e);
+        }
+    }
+}
+
+category.setImages(uploadedImages);
+
+return categoryRepository.save(category);
+}
+
+//
+//	public Category addCategory(Category category) throws InternalServerException, BadRequestException,
+//    UnknownException, ForbiddenException, TooManyRequestsException, UnauthorizedException {
+//
+//// Check if a category with the same name already exists
+//if (categoryRepository.existsByName(category.getName())) {
+//    throw new IllegalArgumentException("Category with this name already exists");
+//}
+//
+//List<ImageInfo> uploadedImages = new ArrayList<>();
+//
+//for (String imageUrl : category.getEncryptedImages()) { // Still receiving URLs temporarily
+//    if (imageUrl != null && !imageUrl.isEmpty()) {
+//        try (InputStream inputStream = new URL(imageUrl).openStream()) {
+//            byte[] imageBytes = inputStream.readAllBytes();
+//            MultipartFile multipartFile = createMultipartFileFromBytes(imageBytes, "image.jpg", "image/jpeg");
+//
+//            // Upload to ImageKit and get result
+//            Result result = imagekitService.uploadFileWithResult(multipartFile);
+//
+//            if (result != null) {
+//                ImageInfo imageInfo = new ImageInfo(result.getUrl(), result.getFileId());
+//                uploadedImages.add(imageInfo);
+//            }
+//        } catch (IOException e) {
+//            throw new RuntimeException("Failed to process image: " + imageUrl, e);
+//        }
+//    }
+//}
+//
+//// Set the new list of ImageInfo objects
+//category.setImages(uploadedImages);
+//
+//// Save to database
+//return categoryRepository.save(category);
+//}
+
 
 	// ✅ Convert Category -> CategoryDto (Including Subcategories)
 	private CategoryDto convertToCategoryDto(Category category) {
@@ -89,34 +131,32 @@ public class CategoryService {
 				? category.getSubcategories().stream().map(this::convertToSubcategoryDto).collect(Collectors.toList())
 				: Collections.emptyList(); // Prevent null issues
 
-		return new CategoryDto(category.getId(), category.getName(), category.getDescription(),
-				category.getEncryptedImages(), // Image URL
-				subcategoryDtos);
+		// Extract just the image URLs from ImageInfo list
+		List<String> imageUrls = category.getImages() != null
+				? category.getImages().stream().map(ImageInfo::getUrl).collect(Collectors.toList())
+				: Collections.emptyList();
+
+		return new CategoryDto(
+				category.getId(),
+				category.getName(),
+				category.getDescription(),
+				imageUrls, // ✅ Only URLs passed to DTO
+				subcategoryDtos
+		);
 	}
 
-	private ProductDto convertToProductDto(Product product) {
-	    List<SpecificationDTO> specificationDTOs = product.getSpecifications() != null
-	            ? product.getSpecifications().stream()
-	                    .map(this::convertToSpecificationDto)
-	                    .collect(Collectors.toList())
-	            : Collections.emptyList();
 
-	    return new ProductDto(
-	            product.getId(),
-	            product.getName(),
-	            product.getDescription(),
-	            // CORRECT: Using BigDecimal directly
-	            product.getBaseprice(),
-	            product.getMinOrderquantity(),
-	            product.getMaxQuantity(),
-	            product.getIncrementStep(),
-	            product.getSubcategory() != null ? product.getSubcategory().getId() : null,
-	            product.getCategory() != null ? product.getCategory().getId() : null,
-	            product.getEncryptedImages(),
-	            specificationDTOs,
-	            product.getViews(),
-	            product.getCreatedAt()
-	    );
+	private ProductDto convertToProductDto(Product product) {
+		List<SpecificationDTO> specificationDTOs = product.getSpecifications() != null
+				? product.getSpecifications().stream().map(this::convertToSpecificationDto).collect(Collectors.toList())
+				: Collections.emptyList();
+
+		return new ProductDto(product.getId(), product.getName(), product.getDescription(),
+				// CORRECT: Using BigDecimal directly
+				product.getBaseprice(), product.getMinOrderquantity(), product.getMaxQuantity(),
+				product.getIncrementStep(), product.getSubcategory() != null ? product.getSubcategory().getId() : null,
+				product.getCategory() != null ? product.getCategory().getId() : null, product.getEncryptedImages(),
+				specificationDTOs, product.getViews(), product.getCreatedAt());
 	}
 
 	// ✅ Convert Specification -> SpecificationDTO
@@ -131,7 +171,7 @@ public class CategoryService {
 
 	// ✅ Convert SpecificationOption -> SpecificationOptionDTO
 	private SpecificationOptionDTO convertToSpecificationOptionDto(SpecificationOption option) {
-		return new SpecificationOptionDTO(option.getId(), option.getName(), option.getPrice(), option.getImage());
+		return new SpecificationOptionDTO(option.getId(), option.getName(), option.getImage(), option.getPrice());
 	}
 
 	// ✅ Convert Subcategory -> SubcategoryDto (Including Products)
@@ -191,36 +231,30 @@ public class CategoryService {
 	}
 
 	public void deleteCategory(Long categoryId) {
-		// Find the category by ID
-		Category category = categoryRepository.findById(categoryId)
-				.orElseThrow(() -> new IllegalArgumentException("Category not found"));
+	    // 1. Find category
+	    Category category = categoryRepository.findById(categoryId)
+	            .orElseThrow(() -> new IllegalArgumentException("Category not found with ID: " + categoryId));
 
-		// Get the image path from the category entity
-		List<String> imagePaths = category.getEncryptedImages();
-		if (imagePaths != null) {
-			for (String imagePath : imagePaths) {
-				deleteImageFile(imagePath);
-			}
-		}
+	    // 2. Delete each image from ImageKit using fileId
+	    if (category.getImages() != null) {
+	        for (ImageInfo imageInfo : category.getImages()) {
+	            if (imageInfo.getFileId() != null && !imageInfo.getFileId().isEmpty()) {
+	                try {
+	                    imagekitService.deleteFileFromImageKit(imageInfo.getFileId());
+	                } catch (Exception e) {
+	                    System.err.println("Failed to delete image from ImageKit: " + imageInfo.getFileId());
+	                    e.printStackTrace();
+	                }
+	            }
+	        }
+	    }
 
-		// Delete the category from the database
-		categoryRepository.delete(category);
+	    // 3. Delete category from DB
+	    categoryRepository.delete(category);
 	}
 
-	private void deleteImageFile(String imagePath) {
-		// Create a File object with the given image path
-		File file = new File(imagePath);
 
-		// Check if the file exists and delete it
-		if (file.exists()) {
-			boolean isDeleted = file.delete();
-			if (!isDeleted) {
-				throw new RuntimeException("Failed to delete the image file");
-			}
-		} else {
-			throw new RuntimeException("Image file not found at the specified path");
-		}
-	}
+
 
 	public List<CategoryDto> getAllCategories() {
 		List<Category> categories = categoryRepository.findAll();
@@ -240,17 +274,21 @@ public class CategoryService {
 	public List<ProductDto> getProductsBySubcategoryAndCategory(Long categoryId, Long subcategoryId) {
 		// Check if the category exists
 		categoryRepository.findById(categoryId).orElseThrow(() -> new IllegalArgumentException("Category not found"));
+
 		// Check if the sub-category exists
 		Subcategory subcategory = subcategoryRepository.findById(subcategoryId)
 				.orElseThrow(() -> new IllegalArgumentException("Subcategory not found"));
-		// Fetch products for the sub-category
-		List<Product> products = productRepository.findBySubcategory(subcategory);
+
+		// Fetch only non-deleted products for the sub-category
+		List<Product> products = productRepository.findBySubcategoryAndIsDeletedFalse(subcategory);
+
 		// Map products to ProductDto to avoid nesting
 		return products.stream().map(this::convertToProductDto).collect(Collectors.toList());
 	}
 
+
 	public List<Product> getProductsBySubcategoryId(Long subcategoryId) {
-		return productRepository.findBySubcategoryId(subcategoryId);
+		return productRepository.findBySubcategoryIdAndIsDeletedFalse(subcategoryId);
 	}
 
 	public CategorySubcategoryProductDto getSubcategoriesAndProductsByCategoryId(Long categoryId) {
@@ -263,7 +301,7 @@ public class CategoryService {
 
 		// For each subcategory, get the associated products
 		List<SubcategoryDto> subcategoryDtos = subcategories.stream().map(subcategory -> {
-			List<Product> products = productRepository.findBySubcategoryId(subcategory.getId());
+			List<Product> products = productRepository.findBySubcategoryIdAndIsDeletedFalse(subcategory.getId());
 			List<ProductDto> productDtos = products.stream().map(this::convertToProductDto)
 					.collect(Collectors.toList());
 			return new SubcategoryDto(subcategory.getId(), subcategory.getName(), productDtos,
@@ -279,5 +317,51 @@ public class CategoryService {
 		// Check if a category with the same name already exists
 		return categoryRepository.existsByName(categoryName);
 	}
+
+
+				public Category editCategory(Long categoryId, String name, String description,
+			            List<MultipartFile> newImages, List<String> fileIdsToReplace) throws Exception {
+
+			Category category = categoryRepository.findById(categoryId)
+			.orElseThrow(() -> new IllegalArgumentException("Category not found"));
+
+			// Update name if provided
+			if (name != null && !name.isBlank()) {
+				category.setName(name);
+			}
+
+			// Update description if provided
+			if (description != null && !description.isBlank()) {
+				category.setDescription(description);
+			}
+
+			// Replace images if needed
+			if (newImages != null && fileIdsToReplace != null && newImages.size() == fileIdsToReplace.size()) {
+			for (int i = 0; i < fileIdsToReplace.size(); i++) {
+			String oldFileId = fileIdsToReplace.get(i);
+			MultipartFile newImage = newImages.get(i);
+
+			// Delete from ImageKit
+			imagekitService.deleteFileFromImageKit(oldFileId);
+
+			// Upload new image
+			Result result = imagekitService.uploadFileWithResult(newImage);
+			ImageInfo newImageInfo = new ImageInfo(result.getUrl(), result.getFileId());
+
+			// Replace in DB image list
+			List<ImageInfo> imageList = category.getImages();
+			for (int j = 0; j < imageList.size(); j++) {
+			if (imageList.get(j).getFileId().equals(oldFileId)) {
+			   imageList.set(j, newImageInfo);
+			   break;
+			}
+			}
+			}
+			}
+
+			return categoryRepository.save(category);
+			}
+
+
 
 }

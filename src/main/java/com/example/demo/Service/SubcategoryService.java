@@ -16,6 +16,7 @@ import com.example.demo.Dto.SpecificationDTO;
 import com.example.demo.Dto.SpecificationOptionDTO;
 import com.example.demo.Dto.SubcategoryDto;
 import com.example.demo.Repository.CategoryRepository;
+import com.example.demo.Repository.ProductRepository;
 import com.example.demo.Repository.SubcategoryRepository;
 import com.example.demo.model.Category;
 import com.example.demo.model.Product;
@@ -30,6 +31,9 @@ public class SubcategoryService {
 
 	@Autowired
 	private CategoryRepository categoryRepository;
+
+	@Autowired
+	private ProductRepository productRepository;
 
 	private final SubcategoryRepository subcategoryRepository;
 
@@ -69,7 +73,8 @@ public class SubcategoryService {
 				product.getSubcategory() != null ? product.getSubcategory().getId() : null, // Prevent null issues
 				product.getCategory() != null ? product.getCategory().getId() : null, // Prevent null issues
 				product.getEncryptedImages(), specificationDTOs, product.getViews(), // Add views here
-				product.getCreatedAt() // Add createdAt here
+				product.getCreatedAt()
+				// Add createdAt here
 		);
 
 	}
@@ -86,7 +91,7 @@ public class SubcategoryService {
 
 	// ✅ Convert SpecificationOption -> SpecificationOptionDTO
 	private SpecificationOptionDTO convertToSpecificationOptionDto(SpecificationOption option) {
-		return new SpecificationOptionDTO(option.getId(), option.getName(), option.getPrice(), option.getImage());
+		return new SpecificationOptionDTO(option.getId(), option.getName(), option.getImage(), option.getPrice());
 	}
 
 	// ✅ Refactored conversion method
@@ -131,16 +136,11 @@ public class SubcategoryService {
 //		return responseDto;
 //	}
 
-	// Delete Subcategory method
-	public void deleteSubcategory(Long subcategoryId) {
-		// Call custom findById method
-		Optional<Subcategory> subcategory = findById1(subcategoryId);
-		if (subcategory.isPresent()) {
-			subcategoryRepository.delete(subcategory.get());
-		} else {
-			throw new IllegalArgumentException("Subcategory not found");
-		}
-	}
+
+
+
+
+
 
 	// Custom findById method
 	public Optional<Subcategory> findById1(Long subcategoryId) {
@@ -162,4 +162,6 @@ public class SubcategoryService {
 			System.out.println("SubcategoryRepository injected successfully!");
 		}
 	}
+
+
 }

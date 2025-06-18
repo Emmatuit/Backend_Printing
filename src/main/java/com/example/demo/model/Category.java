@@ -14,6 +14,9 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 
+
+
+
 @Entity
 public class Category {
 	@Id
@@ -25,47 +28,35 @@ public class Category {
 
 	// Change from single image to list of images
 	@ElementCollection
-	private List<String> encryptedImages = new ArrayList<>();
+	private List<ImageInfo> images = new ArrayList<>();
 
 	@OneToMany(mappedBy = "category", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
 	@JsonManagedReference
 	private List<Subcategory> subcategories = new ArrayList<>();
 
-//	@Id
-//	@GeneratedValue(strategy = GenerationType.IDENTITY)
-//	private Long id;
-//
-//	private String name;
-//	private String description; // Description of the category
-//
-//	// Store the encrypted image as a string
-//	private String encryptedImage; // To store the encrypted image
-//
-//	@OneToMany(mappedBy = "category", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
-//	@JsonManagedReference // Manage reference here
-//	private List<Subcategory> subcategories = new ArrayList<>(); // Relationship with subcategories
 
 	// Default constructor
 	public Category() {
 	}
 
-	public Category(Long id, String name, String description, List<String> encryptedImages,
-			List<Subcategory> subcategories) {
+
+
+	public Category(Long id, String name, String description, List<ImageInfo> images, List<Subcategory> subcategories) {
 		super();
 		this.id = id;
 		this.name = name;
 		this.description = description;
-		this.encryptedImages = encryptedImages;
+		this.images = images;
 		this.subcategories = subcategories;
 	}
+
+
 
 	public String getDescription() {
 		return description;
 	}
 
-	public List<String> getEncryptedImages() {
-		return encryptedImages;
-	}
+
 
 	public Long getId() {
 		return id;
@@ -83,9 +74,19 @@ public class Category {
 		this.description = description;
 	}
 
-	public void setEncryptedImages(List<String> encryptedImages) {
-		this.encryptedImages = encryptedImages;
+
+	public List<ImageInfo> getImages() {
+		return images;
 	}
+
+
+
+	public void setImages(List<ImageInfo> images) {
+		this.images = images;
+	}
+
+
+
 
 	public void setId(Long id) {
 		this.id = id;
@@ -98,5 +99,7 @@ public class Category {
 	public void setSubcategories(List<Subcategory> subcategories) {
 		this.subcategories = subcategories;
 	}
+
+
 
 }

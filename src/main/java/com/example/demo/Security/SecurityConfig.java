@@ -34,22 +34,22 @@ public class SecurityConfig {
 	@Autowired
 	private UserDetailsService userDetailsService;
 
-	@Bean
-	public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration)
-			throws Exception {
+    @Bean
+    AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration)
+            throws Exception {
 		return authenticationConfiguration.getAuthenticationManager();
 	}
 
-	@Bean
-	public AuthenticationProvider authenticationProvider() {
+    @Bean
+    AuthenticationProvider authenticationProvider() {
 		DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
 		authProvider.setUserDetailsService(userDetailsService);
 		authProvider.setPasswordEncoder(passwordEncoder());
 		return authProvider;
 	}
 
-	@Bean
-	public CorsConfigurationSource corsConfigurationSource() {
+    @Bean
+    CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration configuration = new CorsConfiguration();
 
 		configuration.setAllowedOrigins(List.of("http://localhost:59327"));
@@ -62,13 +62,13 @@ public class SecurityConfig {
 		return source;
 	}
 
-	@Bean
-	public PasswordEncoder passwordEncoder() {
+    @Bean
+    PasswordEncoder passwordEncoder() {
 		return new BCryptPasswordEncoder(12);
 	}
 
-	@Bean
-	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    @Bean
+    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 		http.csrf(csrf -> csrf.disable()).cors(cors -> cors.configurationSource(corsConfigurationSource())) // Add CORS
 																											// configuration
 				.authorizeHttpRequests(auth -> auth.requestMatchers("/api/auth/register", "/api/auth/login1", "/api/**")
@@ -76,6 +76,7 @@ public class SecurityConfig {
 						.requestMatchers(HttpMethod.DELETE, "/api/cart/remove").permitAll() // ✅ Allow guests to remove
 						.requestMatchers(HttpMethod.GET, "/api/cart/count").permitAll()
 						.requestMatchers(HttpMethod.POST, "/api/cart/logout").permitAll()
+						.requestMatchers(HttpMethod.GET, "/api/CalculateSubtotal").permitAll()
 						// ✅ Allow guests to count
 						.requestMatchers("/api/place", "/api/auth/change-password1").authenticated() // Only logged-in
 																										// users can

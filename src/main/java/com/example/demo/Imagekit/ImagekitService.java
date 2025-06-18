@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.example.demo.Repository.DesignRequestRepository;
+import com.example.demo.model.ImageInfo;
 
 import io.imagekit.sdk.ImageKit;
 import io.imagekit.sdk.exceptions.BadRequestException;
@@ -31,31 +32,40 @@ public class ImagekitService {
 	}
 
 	public boolean deleteFileFromImageKit(String fileId) {
-		try {
-			imageKit.deleteFile(fileId);
-			return true;
-		} catch (Exception e) {
-			e.printStackTrace();
-			return false;
-		}
+	    try {
+	        imageKit.deleteFile(fileId); // Use SDK's delete method
+	        return true;
+	    } catch (Exception e) {
+	        System.err.println("ImageKit deletion failed for fileId: " + fileId);
+	        e.printStackTrace();
+	        return false;
+	    }
 	}
 
-	public String uploadFile(MultipartFile file) throws IOException, InternalServerException, BadRequestException,
-			UnknownException, ForbiddenException, TooManyRequestsException, UnauthorizedException {
 
-		// Create a FileCreateRequest for the uploaded file (no compression)
-		FileCreateRequest fileCreateRequest = new FileCreateRequest(file.getBytes(), file.getOriginalFilename());
-		fileCreateRequest.setFolder("/categories");
 
-		// Upload to ImageKit
-		Result result = imageKit.upload(fileCreateRequest);
+	public ImageInfo uploadFile(MultipartFile file)
+	        throws IOException, InternalServerException, BadRequestException,
+	        UnknownException, ForbiddenException, TooManyRequestsException, UnauthorizedException {
 
-		if (result != null && result.getUrl() != null) {
-			return result.getUrl(); // Return the full URL provided by ImageKit
-		} else {
-			throw new IOException("Failed to upload image to ImageKit");
-		}
+	    FileCreateRequest fileCreateRequest = new FileCreateRequest(file.getBytes(), file.getOriginalFilename());
+	    fileCreateRequest.setFolder("/categories");
+
+	    Result result = imageKit.upload(fileCreateRequest);
+
+	    if (result != null && result.getUrl() != null && result.getFileId() != null) {
+	        return new ImageInfo(result.getUrl(), result.getFileId());
+	    } else {
+	        throw new IOException("Failed to upload image to ImageKit");
+	    }
 	}
+
+	public Result uploadFileWithResult(MultipartFile file) throws IOException, InternalServerException, BadRequestException, UnknownException, ForbiddenException, TooManyRequestsException, UnauthorizedException{
+	    FileCreateRequest request = new FileCreateRequest(file.getBytes(), file.getOriginalFilename());
+	    request.setFolder("/categories");
+	    return imageKit.upload(request);
+	}
+
 
 	public String uploadFileToProduct(MultipartFile file) throws IOException, InternalServerException,
 			BadRequestException, UnknownException, ForbiddenException, TooManyRequestsException, UnauthorizedException {

@@ -71,26 +71,6 @@ public class UserEntity {
 		return emailVerificationCode;
 	}
 
-	public void setEmailVerificationCode(String emailVerificationCode) {
-		this.emailVerificationCode = emailVerificationCode;
-	}
-
-	public boolean isEmailVerified() {
-		return isEmailVerified;
-	}
-
-	public void setEmailVerified(boolean isEmailVerified) {
-		this.isEmailVerified = isEmailVerified;
-	}
-
-	public LocalDateTime getVerificationCodeExpiry() {
-		return verificationCodeExpiry;
-	}
-
-	public void setVerificationCodeExpiry(LocalDateTime verificationCodeExpiry) {
-		this.verificationCodeExpiry = verificationCodeExpiry;
-	}
-
 	public Long getId() {
 		return id;
 	}
@@ -103,6 +83,14 @@ public class UserEntity {
 		return phoneNumber;
 	}
 
+	public String getResetPasswordToken() {
+		return resetPasswordToken;
+	}
+
+	public LocalDateTime getResetTokenExpiry() {
+		return resetTokenExpiry;
+	}
+
 	public Role getRole() {
 		return role;
 	}
@@ -111,8 +99,24 @@ public class UserEntity {
 		return username;
 	}
 
+	public LocalDateTime getVerificationCodeExpiry() {
+		return verificationCodeExpiry;
+	}
+
+	public boolean isEmailVerified() {
+		return isEmailVerified;
+	}
+
 	public void setEmail(String email) {
 		this.email = email;
+	}
+
+	public void setEmailVerificationCode(String emailVerificationCode) {
+		this.emailVerificationCode = emailVerificationCode;
+	}
+
+	public void setEmailVerified(boolean isEmailVerified) {
+		this.isEmailVerified = isEmailVerified;
 	}
 
 	public void setId(Long id) {
@@ -127,16 +131,8 @@ public class UserEntity {
 		this.phoneNumber = phoneNumber;
 	}
 
-	public String getResetPasswordToken() {
-		return resetPasswordToken;
-	}
-
 	public void setResetPasswordToken(String resetPasswordToken) {
 		this.resetPasswordToken = resetPasswordToken;
-	}
-
-	public LocalDateTime getResetTokenExpiry() {
-		return resetTokenExpiry;
 	}
 
 	public void setResetTokenExpiry(LocalDateTime resetTokenExpiry) {
@@ -149,6 +145,10 @@ public class UserEntity {
 
 	public void setUsername(String username) {
 		this.username = username;
+	}
+
+	public void setVerificationCodeExpiry(LocalDateTime verificationCodeExpiry) {
+		this.verificationCodeExpiry = verificationCodeExpiry;
 	}
 
 	@Override

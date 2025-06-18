@@ -50,38 +50,50 @@ public class CartController {
 	private UserRepository userRepository;
 
 	@PostMapping("/add")
-	public ResponseEntity<String> addItemToCart(
-	    @RequestParam(value = "sessionId", required = false) String sessionId,
-	    @RequestParam(value = "email", required = false) String email,
-	    @RequestParam("designRequestId") Long designRequestId,
-	    @RequestBody CartItemDto cartItemDto
-	) {
-	    if (cartItemDto.getProduct() == null || cartItemDto.getSelectedOptions() == null) {
-	        return ResponseEntity.badRequest().body("Product or selected options cannot be null.");
-	    }
+	public ResponseEntity<String> addItemToCart(@RequestParam(name = "sessionId",required = false) String sessionId,
+			@RequestParam(name = "email",required = false) String email, @RequestParam("designRequestId") Long designRequestId,
+			@RequestBody CartItemDto cartItemDto) {
+		if (cartItemDto.getProduct() == null || cartItemDto.getSelectedOptions() == null) {
+			return ResponseEntity.badRequest().body("Product or selected options cannot be null.");
+		}
 
-	    // Determine user or session cart
-	    if (email != null) {
-	        UserEntity user = userRepository.findByEmail(email)
-	            .orElseThrow(() -> new RuntimeException("User not found"));
+		// Determine user or session cart
+		if (email != null) {
+			UserEntity user = userRepository.findByEmail(email)
+					.orElseThrow(() -> new RuntimeException("User not found"));
 
-	        cartService.addItemToUserCart(user, cartItemDto, designRequestId);
-	    } else if (sessionId != null) {
-	        cartService.addItemToCart(sessionId, cartItemDto, designRequestId);
-	    } else {
-	        return ResponseEntity.badRequest().body("SessionId or Email must be provided.");
-	    }
+			cartService.addItemToUserCart(user, cartItemDto, designRequestId);
+		} else if (sessionId != null) {
+			cartService.addItemToCart(sessionId, cartItemDto, designRequestId);
+		} else {
+			return ResponseEntity.badRequest().body("SessionId or Email must be provided.");
+		}
 
-	    return ResponseEntity.ok("Item added to cart!");
+		return ResponseEntity.ok("Item added to cart!");
 	}
-
 
 	// Get the cart details
 
+	@DeleteMapping("/delete/{id}")
+	public ResponseEntity<String> deleteUser(@PathVariable("id") Long id) {
+		Optional<UserEntity> userOptional = userRepository.findById(id);
+		if (userOptional.isEmpty()) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+		}
+
+		UserEntity user = userOptional.get();
+
+		// Delete all carts belonging to this user first
+		cartRepository.deleteAllByUser(user);
+
+		// Then delete the user
+		userRepository.delete(user);
+		return ResponseEntity.ok("User and related carts deleted successfully");
+	}
+
 	@GetMapping("/items")
-	public ResponseEntity<List<CartItemDto>> getAllCartItems(
-			@RequestParam(value = "sessionId", required = false) String sessionId,
-			@RequestParam(value = "email", required = false) String email) {
+	public ResponseEntity<List<CartItemDto>> getAllCartItems(@RequestParam(name = "sessionId", required = false) String sessionId,
+			@RequestParam(name = "email",required = false) String email) {
 
 		List<CartItemDto> cartItems;
 
@@ -102,7 +114,7 @@ public class CartController {
 
 	@GetMapping("/count")
 	public ResponseEntity<Integer> getCartItemCount(
-			@RequestHeader(value = "SessionId", required = false) String sessionId,
+			@RequestHeader(value = "sessionId", required = false) String sessionId,
 			@AuthenticationPrincipal UserDetails userDetails) {
 		int count = 0;
 
@@ -117,47 +129,8 @@ public class CartController {
 		return ResponseEntity.ok(count);
 	}
 
-//	 @GetMapping("/count")
-//	    public ResponseEntity<Integer> getCartItemCount(
-//	            @RequestParam(value = "sessionId", required = false) String sessionId,
-//	            @AuthenticationPrincipal UserDetails userDetails) {
-//
-//	        int count = 0;
-//
-//	        if (userDetails != null) {
-//	            UserEntity user = userRepository.findByUsername(userDetails.getUsername())
-//	                    .orElseThrow();
-//	            count = cartRepository.findByUser(user)
-//	                    .map(c -> c.getItems().size())
-//	                    .orElse(0);
-//
-//	        } else if (sessionId != null) {
-//	            count = cartRepository.findBySessionId(sessionId)
-//	                    .map(c -> c.getItems().size())
-//	                    .orElse(0);
-//	        }
-//
-//	        return ResponseEntity.ok(count);
-//	    }
-//
-
-//	    @PostMapping("/logout")
-//	    public ResponseEntity<Map<String, String>> logoutGuestSession(
-//	            @RequestParam("sessionId") String oldSessionId) {
-//
-//	        cartRepository.findBySessionId(oldSessionId)
-//	                .ifPresent(cartRepository::delete);
-//
-//	        String newSessionId = UUID.randomUUID().toString();
-//
-//	        return ResponseEntity.ok(Map.of(
-//	            "message", "Logged out successfully",
-//	            "newSessionId", newSessionId
-//	        ));
-//	    }
-
 	@PostMapping("/logout")
-	public ResponseEntity<Map<String, String>> logoutGuestSession(@RequestHeader("SessionId") String oldSessionId) {
+	public ResponseEntity<Map<String, String>> logoutGuestSession(@RequestHeader("oldSessionId") String oldSessionId) {
 
 		cartRepository.findBySessionId(oldSessionId).ifPresent(cartRepository::delete);
 
@@ -168,8 +141,7 @@ public class CartController {
 
 	@DeleteMapping("/remove")
 	public ResponseEntity<String> removeFromCart(@RequestParam("productId") Long productId,
-			@RequestParam(value = "sessionId", required = false) String sessionId,
-			@AuthenticationPrincipal UserDetails userDetails) {
+			@RequestParam(name = "sessionId",required = false) String sessionId, @AuthenticationPrincipal UserDetails userDetails) {
 
 		try {
 			Optional<Cart> optionalCart;
@@ -226,23 +198,6 @@ public class CartController {
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 					.body("An error occurred while removing the item.");
 		}
-	}
-
-	@DeleteMapping("/delete/{id}")
-	public ResponseEntity<String> deleteUser(@PathVariable("id") Long id) {
-		Optional<UserEntity> userOptional = userRepository.findById(id);
-		if (userOptional.isEmpty()) {
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
-		}
-
-		UserEntity user = userOptional.get();
-
-		// Delete all carts belonging to this user first
-		cartRepository.deleteAllByUser(user);
-
-		// Then delete the user
-		userRepository.delete(user);
-		return ResponseEntity.ok("User and related carts deleted successfully");
 	}
 
 }

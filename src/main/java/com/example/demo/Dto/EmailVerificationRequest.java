@@ -13,20 +13,20 @@ public class EmailVerificationRequest {
 		this.code = code;
 	}
 
-	public String getEmail() {
-		return email;
-	}
-
-	public void setEmail(String email) {
-		this.email = email;
-	}
-
 	public String getCode() {
 		return code;
 	}
 
+	public String getEmail() {
+		return email;
+	}
+
 	public void setCode(String code) {
 		this.code = code;
+	}
+
+	public void setEmail(String email) {
+		this.email = email;
 	}
 
 }

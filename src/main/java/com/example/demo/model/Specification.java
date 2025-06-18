@@ -5,7 +5,6 @@ import java.util.List;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -22,8 +21,9 @@ public class Specification {
 
 	private String name; // e.g., "Color", "Size"
 
-	@OneToMany(mappedBy = "specification", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+	@OneToMany(mappedBy = "specification", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<SpecificationOption> options = new ArrayList<>();
+
 
 	@ManyToOne
 	@JoinColumn(name = "product_id", nullable = false)

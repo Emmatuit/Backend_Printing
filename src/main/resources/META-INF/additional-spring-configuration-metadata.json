@@ -23,5 +23,50 @@
     "name": "sendgrid.sender.email",
     "type": "java.lang.String",
     "description": "A description for 'sendgrid.sender.email'"
+  },
+  {
+    "name": "paystack.public.key",
+    "type": "java.lang.String",
+    "description": "A description for 'paystack.public.key'"
+  },
+  {
+    "name": "paystack.secret.key",
+    "type": "java.lang.String",
+    "description": "A description for 'paystack.secret.key'"
+  },
+  {
+    "name": "flutterwave.encryption.key",
+    "type": "java.lang.String",
+    "description": "A description for 'flutterwave.encryption.key'"
+  },
+  {
+    "name": "flutterwave.redirect.url",
+    "type": "java.lang.String",
+    "description": "A description for 'flutterwave.redirect.url'"
+  },
+  {
+    "name": "flutterwave.currency",
+    "type": "java.lang.String",
+    "description": "A description for 'flutterwave.currency'"
+  },
+  {
+    "name": "flutterwave.base.url",
+    "type": "java.lang.String",
+    "description": "A description for 'flutterwave.base.url'"
+  },
+  {
+    "name": "flutterwave.public.key",
+    "type": "java.lang.String",
+    "description": "A description for 'flutterwave.public.key'"
+  },
+  {
+    "name": "flutterwave.secret.key",
+    "type": "java.lang.String",
+    "description": "A description for 'flutterwave.secret.key'"
+  },
+  {
+    "name": "imagekit.urlEndpoint",
+    "type": "java.lang.String",
+    "description": "A description for 'imagekit.urlEndpoint'"
   }
 ]}

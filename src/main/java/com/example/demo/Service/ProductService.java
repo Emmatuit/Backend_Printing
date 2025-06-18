@@ -14,8 +14,11 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import com.example.demo.Dto.CartItemDto;
 import com.example.demo.Dto.ProductDto;
+import com.example.demo.Dto.SpecificationOptionDTO;
 import com.example.demo.Features.ClickedProductHistory;
+import com.example.demo.Imagekit.ImagekitService;
 import com.example.demo.Repository.CartItemRepository;
 import com.example.demo.Repository.CartRepository;
 import com.example.demo.Repository.ClickedProductHistoryRepository;
@@ -25,6 +28,7 @@ import com.example.demo.Repository.SpecificationRepository;
 import com.example.demo.Repository.SubcategoryRepository;
 import com.example.demo.Repository.UserRepository;
 import com.example.demo.calculations.CalculationBased;
+import com.example.demo.model.ImageInfo;
 import com.example.demo.model.Product;
 import com.example.demo.model.Specification;
 import com.example.demo.model.SpecificationOption;
@@ -46,13 +50,83 @@ public class ProductService {
 	private UserRepository userRepository;
 
 	@Autowired
+	private ImagekitService imagekitService;
+
+	@Autowired
 	private ClickedProductHistoryRepository clickedProductHistoryRepository;
 
 	private SpecificationOptionRepository specificationOptionRepository;
 
+
+	// Setter for CalculationBased
+		@Autowired
+		public void setCalculationBased(CalculationBased calculationBased) {
+			this.calculationBased = calculationBased;
+		}
+
+		// Setter for CartItemRepository
+		@Autowired
+		public void setCartItemRepository(CartItemRepository cartItemRepository) {
+			this.cartItemRepository = cartItemRepository;
+		}
+
+		// Setter for CartRepository
+		@Autowired
+		public void setCartRepository(CartRepository cartRepository) {
+			this.cartRepository = cartRepository;
+		}
+
+		// Setter for ProductRepository
+		@Autowired
+		public void setProductRepository(ProductRepository productRepository) {
+			this.productRepository = productRepository;
+		}
+
+		// Setter for SpecificationOptionRepository
+		@Autowired
+		public void setSpecificationOptionRepository(SpecificationOptionRepository specificationOptionRepository) {
+			this.specificationOptionRepository = specificationOptionRepository;
+		}
+
+		// Setter for SpecificationRepository
+		@Autowired
+		public void setSpecificationRepository(SpecificationRepository specificationRepository) {
+			this.specificationRepository = specificationRepository;
+		}
+
+		// Setter for SubcategoryRepository
+		@Autowired
+		public void setSubcategoryRepository(SubcategoryRepository subcategoryRepository) {
+			this.subcategoryRepository = subcategoryRepository;
+		}
+
+		@Autowired
+		public void setUserRepository(UserRepository userRepository) {
+			this.userRepository = userRepository;
+		}
+
+
 	// Method to save a new product
 	public Product addProduct(Product product) {
 		return productRepository.save(product);
+	}
+
+	// ============================================================================//
+	public BigDecimal calculateCartSubtotal(List<CartItemDto> cartItems) {
+		BigDecimal subtotal = BigDecimal.ZERO;
+
+		for (CartItemDto item : cartItems) {
+			Long productId = item.getProduct().getId();
+			Integer quantity = item.getSelectedQuantity();
+
+			List<Long> selectedOptionIds = item.getSelectedOptions().stream().map(SpecificationOptionDTO::getId)
+					.collect(Collectors.toList());
+
+			BigDecimal itemTotal = calculateTotalPrice(productId, quantity, selectedOptionIds);
+			subtotal = subtotal.add(itemTotal);
+		}
+
+		return subtotal.setScale(2, RoundingMode.HALF_UP);
 	}
 
 	public BigDecimal calculateTotalPrice(Long productId, Integer selectedQuantity, List<Long> selectedOptionIds) {
@@ -66,16 +140,23 @@ public class ProductService {
 	        throw new RuntimeException("Invalid quantity selected. Valid quantities are: " + validQuantities);
 	    }
 
-	    BigDecimal basePrice = product.getBaseprice();
-	    BigDecimal additionalCost = BigDecimal.ZERO;
+	    // Calculate the factor based on minQuantity steps
+	    int factor = selectedQuantity / product.getMinOrderquantity();
+
+	    // Base price scaling
+	    BigDecimal scaledBasePrice = product.getBaseprice().multiply(BigDecimal.valueOf(factor));
+
+	    BigDecimal scaledAdditionalCost = BigDecimal.ZERO;
 
 	    // Process selected options
 	    if (selectedOptionIds != null && !selectedOptionIds.isEmpty()) {
+	        // Fetch specifications and their options
 	        List<Specification> productSpecifications = specificationRepository.findByProductId(productId);
 	        List<SpecificationOption> allOptions = productSpecifications.stream()
 	                .flatMap(spec -> spec.getOptions().stream())
 	                .collect(Collectors.toList());
 
+	        // Find selected options
 	        List<SpecificationOption> selectedOptions = allOptions.stream()
 	                .filter(option -> selectedOptionIds.contains(option.getId()))
 	                .collect(Collectors.toList());
@@ -90,23 +171,27 @@ public class ProductService {
 	            }
 	        }
 
-	        // Sum options' prices using BigDecimal
-	        additionalCost = selectedOptions.stream()
-	                .map(option -> option.getPrice() != null ? option.getPrice() : BigDecimal.ZERO)
+	        // Sum option prices, scaling each by factor
+	        scaledAdditionalCost = selectedOptions.stream()
+	                .map(option -> (option.getPrice() != null ? option.getPrice() : BigDecimal.ZERO)
+	                        .multiply(BigDecimal.valueOf(factor)))
 	                .reduce(BigDecimal.ZERO, BigDecimal::add);
 	    }
 
-	    // Calculate total price
-	    BigDecimal totalPrice = basePrice.add(additionalCost)
-	            .multiply(new BigDecimal(selectedQuantity))
+	    // Final total price = scaled base price + scaled additional cost
+	    BigDecimal totalPrice = scaledBasePrice.add(scaledAdditionalCost)
 	            .setScale(2, RoundingMode.HALF_UP);
 
-	    log.info("Product ID: {}, Base Price: {}, Additional Cost: {}, Quantity: {}, Total: {}",
-	            productId, basePrice, additionalCost, selectedQuantity, totalPrice);
+	    // Log for debugging
+	    log.info("Product ID: {}, Base Price: {}, Scaled Base Price: {}, Scaled Additional Cost: {}, Quantity: {}, Total: {}",
+	            productId, product.getBaseprice(), scaledBasePrice, scaledAdditionalCost, selectedQuantity, totalPrice);
 
 	    return totalPrice;
 	}
 
+//========================================================================================================//
+
+	// ================================================================================================//
 	public boolean existsByNameAndSubcategoryId(String name, Long subcategoryId) {
 		return productRepository.existsByNameAndSubcategoryId(name, subcategoryId);
 	}
@@ -126,45 +211,38 @@ public class ProductService {
 
 	// Get product by ID
 	public Product getProductById(Long productId) {
-	    return productRepository.findById(productId).orElse(null);
+		return productRepository.findById(productId).orElse(null);
 	}
 
 	public List<Product> getProductsBySubcategory(Long subcategoryId) {
-	    Subcategory subcategory = subcategoryRepository.findById(subcategoryId)
-	            .orElseThrow(() -> new IllegalArgumentException("Invalid subcategory ID"));
-	    return productRepository.findBySubcategory(subcategory);
+		Subcategory subcategory = subcategoryRepository.findById(subcategoryId)
+				.orElseThrow(() -> new IllegalArgumentException("Invalid subcategory ID"));
+		return productRepository.findBySubcategoryAndIsDeletedFalse(subcategory);
 	}
 
 	public Page<ProductDto> getSimilarProducts(Long productId, int page, int size) {
-	    Product product = productRepository.findById(productId)
-	            .orElseThrow(() -> new RuntimeException("Product not found"));
+		Product product = productRepository.findById(productId)
+				.orElseThrow(() -> new RuntimeException("Product not found"));
 
-	    // Calculate price range with proper scaling
-	    BigDecimal basePrice = product.getBaseprice()
-	            .add(BigDecimal.ONE)
-	            .setScale(2, RoundingMode.HALF_UP);
-	            
-	    BigDecimal maxPrice = basePrice
-	            .add(new BigDecimal("1000"))
-	            .setScale(2, RoundingMode.HALF_UP);
+		// Calculate price range with proper scaling
+		BigDecimal basePrice = product.getBaseprice().add(BigDecimal.ONE).setScale(2, RoundingMode.HALF_UP);
 
-	    Pageable pageable = PageRequest.of(page, size);
+		BigDecimal maxPrice = basePrice.add(new BigDecimal("1000")).setScale(2, RoundingMode.HALF_UP);
 
-	    Page<Product> similarProducts = productRepository.findSimilarProducts(
-	            product.getCategory().getId(),
-	            basePrice,
-	            maxPrice,
-	            product.getId(),
-	            pageable);
+		Pageable pageable = PageRequest.of(page, size);
 
-	    return similarProducts.map(this::mapToDto);
+		Page<Product> similarProducts = productRepository.findSimilarProductsNotDeleted(product.getCategory().getId(), basePrice,
+				maxPrice, product.getId(), pageable);
+
+		return similarProducts.map(this::mapToDto);
 	}
-
 
 	public List<ProductDto> getTrendingProducts() {
-		List<Product> trending = productRepository.findTop10ByOrderByViewsDesc();
+		List<Product> trending = productRepository.findTop10ByIsDeletedFalseOrderByViewsDesc();
 		return trending.stream().map(this::mapToDto).collect(Collectors.toList());
 	}
+
+
 
 	private ProductDto mapToDto(Product product) {
 		ProductDto dto = new ProductDto();
@@ -188,8 +266,7 @@ public class ProductService {
 
 	@Transactional
 	public void mergeSessionHistoryWithUser(String email, String sessionId) {
-		UserEntity user = userRepository.findByEmail(email)
-				.orElseThrow(() -> new RuntimeException("User not found"));
+		UserEntity user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
 
 		if (sessionId == null) {
 			return;
@@ -211,56 +288,73 @@ public class ProductService {
 	}
 
 	public List<ProductDto> searchProductsByName(String name) {
-		List<Product> products = productRepository.findByNameContainingIgnoreCase(name);
+		List<Product> products = productRepository.findByNameContainingIgnoreCaseAndIsDeletedFalse(name);
 		return products.stream().map(this::mapToDto) // Use your defined method
 				.toList();
 	}
 
-	// Setter for CalculationBased
-	@Autowired
-	public void setCalculationBased(CalculationBased calculationBased) {
-		this.calculationBased = calculationBased;
+	private void deleteFromImageKitSafely(String fileId) {
+	    if (fileId != null && !fileId.isEmpty()) {
+	        try {
+	            imagekitService.deleteFileFromImageKit(fileId);
+	        } catch (Exception e) {
+	            System.err.println("Failed to delete from ImageKit: " + fileId);
+	        }
+	    }
 	}
 
-	// Setter for CartItemRepository
-	@Autowired
-	public void setCartItemRepository(CartItemRepository cartItemRepository) {
-		this.cartItemRepository = cartItemRepository;
+
+	@Transactional
+	public void deleteProductPermanently(Long productId) {
+	    Product product = productRepository.findById(productId)
+	            .orElseThrow(() -> new IllegalArgumentException("Product not found with ID: " + productId));
+
+	    // 1. Delete Product Images from ImageKit
+	    if (product.getEncryptedImages() != null) {
+	        for (ImageInfo imageInfo : product.getEncryptedImages()) {
+	            String fileId = imageInfo.getFileId(); // ✅ Use fileId, not URL
+	            if (fileId != null && !fileId.isEmpty()) {
+	                deleteFromImageKitSafely(fileId);
+	            }
+	        }
+	    }
+
+	    // 2. Delete SpecificationOption Images from ImageKit
+	    if (product.getSpecifications() != null) {
+	        for (Specification spec : product.getSpecifications()) {
+	            if (spec.getOptions() != null) {
+	                for (SpecificationOption option : spec.getOptions()) {
+	                    ImageInfo imageInfo = option.getImage(); // Get the ImageInfo object
+	                    if (imageInfo != null && imageInfo.getUrl() != null) {
+	                        String fileId = extractFileIdFromUrl(imageInfo.getUrl());
+	                        if (fileId != null && !fileId.isEmpty()) {
+	                            deleteFromImageKitSafely(fileId);
+	                        }
+	                    }
+	                }
+	            }
+	        }
+	    }
+
+	    log.info("⚠ Deleting dependent records for product {}", productId);
+
+	    productRepository.deleteSpecOptionsByProductId(productId);
+	    productRepository.deleteSpecificationsByProductId(productId);
+	    productRepository.deleteEncryptedImagesByProductId(productId);
+
+	    log.info("🔥 Deleting product {}", productId);
+	    productRepository.hardDeleteById(productId);
+	    log.info("✅ Product deleted: {}", productId);
 	}
 
-	// Setter for CartRepository
-	@Autowired
-	public void setCartRepository(CartRepository cartRepository) {
-		this.cartRepository = cartRepository;
+
+	private String extractFileIdFromUrl(String imageUrl) {
+	    if (imageUrl == null || imageUrl.isEmpty()) {
+			return null;
+		}
+	    return imageUrl.substring(imageUrl.lastIndexOf("/") + 1);
 	}
 
-	// Setter for ProductRepository
-	@Autowired
-	public void setProductRepository(ProductRepository productRepository) {
-		this.productRepository = productRepository;
-	}
 
-	// Setter for SpecificationOptionRepository
-	@Autowired
-	public void setSpecificationOptionRepository(SpecificationOptionRepository specificationOptionRepository) {
-		this.specificationOptionRepository = specificationOptionRepository;
-	}
-
-	// Setter for SpecificationRepository
-	@Autowired
-	public void setSpecificationRepository(SpecificationRepository specificationRepository) {
-		this.specificationRepository = specificationRepository;
-	}
-
-	// Setter for SubcategoryRepository
-	@Autowired
-	public void setSubcategoryRepository(SubcategoryRepository subcategoryRepository) {
-		this.subcategoryRepository = subcategoryRepository;
-	}
-
-	@Autowired
-	public void setUserRepository(UserRepository userRepository) {
-		this.userRepository = userRepository;
-	}
 
 }

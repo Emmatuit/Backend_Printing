@@ -88,8 +88,7 @@ public class CartService {
 		}
 
 		// Retrieve or create cart for session
-		Cart cart = cartRepository.findBySessionId(sessionId)
-				.orElseGet(() -> cartRepository.save(new Cart(sessionId)));
+		Cart cart = cartRepository.findBySessionId(sessionId).orElseGet(() -> cartRepository.save(new Cart(sessionId)));
 
 		// Fetch product
 		Product product = productRepository.findById(cartItemDTO.getProduct().getId())
@@ -98,8 +97,8 @@ public class CartService {
 		// Fetch selected specification options
 		List<SpecificationOption> selectedOptions = cartItemDTO.getSelectedOptions().stream()
 				.map(optionDTO -> specificationOptionRepository.findById(optionDTO.getId())
-						.orElseThrow(() -> new ResponseStatusException(
-								HttpStatus.NOT_FOUND, "Selected option with ID " + optionDTO.getId() + " not found")))
+						.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+								"Selected option with ID " + optionDTO.getId() + " not found")))
 				.collect(Collectors.toList());
 
 		// Validate options
@@ -118,10 +117,9 @@ public class CartService {
 		}
 
 		// Calculate total price
-		List<Long> selectedOptionIds = selectedOptions.stream()
-				.map(SpecificationOption::getId)
-				.toList();
-		BigDecimal totalPrice = productService.calculateTotalPrice(product.getId(), selectedQuantity, selectedOptionIds);
+		List<Long> selectedOptionIds = selectedOptions.stream().map(SpecificationOption::getId).toList();
+		BigDecimal totalPrice = productService.calculateTotalPrice(product.getId(), selectedQuantity,
+				selectedOptionIds);
 
 		// Create and add CartItem
 		CartItem cartItem = new CartItem(product, selectedQuantity, totalPrice, selectedOptions);
@@ -134,7 +132,7 @@ public class CartService {
 		return convertToCartItemDTO(cartItem);
 	}
 
-	//=====================================================================//
+	// =====================================================================//
 	@Transactional
 	public CartItemDto addItemToUserCart(UserEntity user, CartItemDto cartItemDTO, Long designRequestId) {
 		if (user == null) {
@@ -146,12 +144,11 @@ public class CartService {
 		}
 
 		// Get or create user's cart
-		Cart cart = cartRepository.findByUser(user)
-				.orElseGet(() -> {
-					Cart newCart = new Cart();
-					newCart.setUser(user);
-					return cartRepository.save(newCart);
-				});
+		Cart cart = cartRepository.findByUser(user).orElseGet(() -> {
+			Cart newCart = new Cart();
+			newCart.setUser(user);
+			return cartRepository.save(newCart);
+		});
 
 		// Fetch product
 		Product product = productRepository.findById(cartItemDTO.getProduct().getId())
@@ -160,8 +157,8 @@ public class CartService {
 		// Fetch selected specification options
 		List<SpecificationOption> selectedOptions = cartItemDTO.getSelectedOptions().stream()
 				.map(optionDTO -> specificationOptionRepository.findById(optionDTO.getId())
-						.orElseThrow(() -> new ResponseStatusException(
-								HttpStatus.NOT_FOUND, "Selected option with ID " + optionDTO.getId() + " not found")))
+						.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+								"Selected option with ID " + optionDTO.getId() + " not found")))
 				.collect(Collectors.toList());
 
 		// Validate options
@@ -180,10 +177,9 @@ public class CartService {
 		}
 
 		// Calculate total price
-		List<Long> selectedOptionIds = selectedOptions.stream()
-				.map(SpecificationOption::getId)
-				.toList();
-		BigDecimal totalPrice = productService.calculateTotalPrice(product.getId(), selectedQuantity, selectedOptionIds);
+		List<Long> selectedOptionIds = selectedOptions.stream().map(SpecificationOption::getId).toList();
+		BigDecimal totalPrice = productService.calculateTotalPrice(product.getId(), selectedQuantity,
+				selectedOptionIds);
 
 		// Create and add CartItem
 		CartItem cartItem = new CartItem(product, selectedQuantity, totalPrice, selectedOptions);
@@ -194,6 +190,14 @@ public class CartService {
 		cartRepository.save(cart);
 
 		return convertToCartItemDTO(cartItem);
+	}
+
+	public void clearCart(UserEntity user) {
+	    Cart cart = cartRepository.findByUser(user)
+	        .orElseThrow(() -> new RuntimeException("Cart not found for user"));
+
+	    cart.getItems().clear();
+	    cartRepository.save(cart);
 	}
 
 	@Scheduled(cron = "0 0 */1 * * *") // Every hour (use this as a realistic testing interval)
@@ -242,7 +246,12 @@ public class CartService {
 
 	// ✅ Convert SpecificationOption -> SpecificationOptionDTO
 	private SpecificationOptionDTO convertToSpecificationOptionDto(SpecificationOption option) {
-		return new SpecificationOptionDTO(option.getId(), option.getName(), option.getPrice(), option.getImage());
+		return new SpecificationOptionDTO(
+			option.getId(),
+			option.getName(),
+			option.getImage(),
+			option.getPrice() // This now returns ImageInfo
+		);
 	}
 
 	// Helper method to convert SpecificationOption to SpecificationOptionDTO
@@ -250,10 +259,11 @@ public class CartService {
 		SpecificationOptionDTO optionDTO = new SpecificationOptionDTO();
 		optionDTO.setId(option.getId());
 		optionDTO.setName(option.getName());
-		optionDTO.setImage(option.getImage());
+		optionDTO.setImage(option.getImage()); // Now sets ImageInfo object
 		optionDTO.setPrice(option.getPrice());
 		return optionDTO;
 	}
+
 
 	public List<CartItemDto> getAllCartItems(String sessionId) {
 		// Fetch the cart by sessionId (return empty if not found)
@@ -275,10 +285,6 @@ public class CartService {
 		}
 
 		return cart.getItems().stream().map(this::toDto).collect(Collectors.toList());
-	}
-
-	public Cart getCartBySessionId(String sessionId) {
-		return cartRepository.findBySessionId(sessionId).orElse(null);
 	}
 
 // // Scheduled to run daily at midnight
@@ -345,8 +351,15 @@ public class CartService {
 //			System.out.println("Cart updated after item removal.");
 //		}
 //	}
-	
 
+	public Cart getCartBySessionId(String sessionId) {
+		return cartRepository.findBySessionId(sessionId).orElse(null);
+	}
+
+	public Cart getCartByUser(UserEntity user) {
+	    return cartRepository.findByUser(user)
+	        .orElseThrow(() -> new RuntimeException("Cart not found for user: " + user.getEmail()));
+	}
 
 	@Transactional
 	public void mergeSessionCartWithUser(String email, String sessionId) {
@@ -385,6 +398,7 @@ public class CartService {
 		System.out.println("✅ Cart merged successfully for user: " + email);
 	}
 
+
 	private CartItemDto toDto(CartItem cartItem) {
 		CartItemDto dto = new CartItemDto();
 
@@ -397,7 +411,8 @@ public class CartService {
 				product.getSpecifications() != null ? product.getSpecifications().stream()
 						.map(this::convertToSpecificationDto).collect(Collectors.toList()) : Collections.emptyList(),
 				product.getViews(), // Added views here
-				product.getCreatedAt() // Added createdAt here
+				product.getCreatedAt()
+				// Added createdAt here
 		);
 
 		// Set the converted productDto
@@ -425,5 +440,7 @@ public class CartService {
 
 		return dto;
 	}
+
+
 
 }

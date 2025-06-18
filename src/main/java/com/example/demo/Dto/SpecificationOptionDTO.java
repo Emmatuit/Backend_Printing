@@ -3,13 +3,14 @@ package com.example.demo.Dto;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
+import com.example.demo.model.ImageInfo;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class SpecificationOptionDTO {
 	private Long id;
 	private String name;
-	private String image;
+	private ImageInfo image;
 
 	@JsonFormat(shape = JsonFormat.Shape.STRING)
 	private BigDecimal price; // Changed from Double to BigDecimal
@@ -18,11 +19,31 @@ public class SpecificationOptionDTO {
 	public SpecificationOptionDTO() {
 	}
 
-	public SpecificationOptionDTO(Long id, String name, BigDecimal price, String image) {
+	public SpecificationOptionDTO(Long id, String name, ImageInfo image, BigDecimal price) {
+		super();
 		this.id = id;
 		this.name = name;
-		this.price = price != null ? price.setScale(2, RoundingMode.HALF_UP) : null;
 		this.image = image;
+		this.price = price != null ? price.setScale(2, RoundingMode.HALF_UP) : null;
+	}
+
+	// Getters and Setters
+	public Long getId() {
+		return id;
+	}
+
+
+
+	public ImageInfo getImage() {
+		return image;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public BigDecimal getPrice() {
+		return price;
 	}
 
 	// Backward compatibility for Double
@@ -31,41 +52,24 @@ public class SpecificationOptionDTO {
 		return price != null ? price.doubleValue() : null;
 	}
 
-	@JsonIgnore
-	public void setPriceAsDouble(Double price) {
-		this.price = price != null ? BigDecimal.valueOf(price).setScale(2, RoundingMode.HALF_UP) : null;
-	}
-
-	// Getters and Setters
-	public Long getId() {
-		return id;
-	}
-
 	public void setId(Long id) {
 		this.id = id;
 	}
 
-	public String getName() {
-		return name;
+	public void setImage(ImageInfo imageInfo) {
+		this.image = imageInfo;
 	}
 
 	public void setName(String name) {
 		this.name = name;
 	}
 
-	public String getImage() {
-		return image;
-	}
-
-	public void setImage(String image) {
-		this.image = image;
-	}
-
-	public BigDecimal getPrice() {
-		return price;
-	}
-
 	public void setPrice(BigDecimal price) {
 		this.price = price != null ? price.setScale(2, RoundingMode.HALF_UP) : null;
+	}
+
+	@JsonIgnore
+	public void setPriceAsDouble(Double price) {
+		this.price = price != null ? BigDecimal.valueOf(price).setScale(2, RoundingMode.HALF_UP) : null;
 	}
 }

@@ -16,10 +16,10 @@ public interface CartRepository extends JpaRepository<Cart, Long> {
 	@Query("SELECT COUNT(c) FROM CartItem c WHERE c.cart.sessionId = :sessionId")
 	int countCartItems(@Param("sessionId") String sessionId);
 
+	void deleteAllByUser(UserEntity user);
+
 	Optional<Cart> findBySessionId(String sessionId);
 
 	Optional<Cart> findByUser(UserEntity user);
-
-	void deleteAllByUser(UserEntity user);
 
 }

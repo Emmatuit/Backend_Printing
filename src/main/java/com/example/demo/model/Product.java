@@ -6,10 +6,13 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -18,7 +21,6 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
-import jakarta.persistence.Transient;
 
 @Entity
 public class Product { // Updated to "Product" from "Products"
@@ -37,10 +39,11 @@ public class Product { // Updated to "Product" from "Products"
 
 	// Store the encrypted images as a list of strings
 	@ElementCollection
-	private List<String> encryptedImages = new ArrayList<>();
+	private List<ImageInfo> encryptedImages = new ArrayList<>();
 
-	@ManyToOne
-	@JoinColumn(name = "subcategory_id")
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "subcategory_id", nullable = true)
+	@JsonIgnore
 	private Subcategory subcategory;
 
 	@ManyToOne
@@ -49,6 +52,7 @@ public class Product { // Updated to "Product" from "Products"
 
 	@OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<Specification> specifications = new ArrayList<>();
+
 
 	// ✅ Track total views
 	@Column(nullable = false)
@@ -62,13 +66,27 @@ public class Product { // Updated to "Product" from "Products"
 	@Column
 	private LocalDateTime updatedAt;
 
+	@Column(name = "is_deleted")
+	private Boolean isDeleted = false;
+
+	 public Boolean getIsDeleted() {
+		    return isDeleted;
+		}
+
+		public void setIsDeleted(Boolean deleted) {
+		    isDeleted = deleted;
+		}
+
 	// Default constructor
 	public Product() {
 	}
 
+
+
+
 	public Product(Long id, String name, String description, BigDecimal baseprice, Integer minOrderquantity,
-			Integer maxQuantity, Integer incrementStep, List<String> encryptedImages, Subcategory subcategory,
-			Category category, List<Specification> specifications) {
+			Integer maxQuantity, Integer incrementStep, List<ImageInfo> encryptedImages, Subcategory subcategory,
+			Category category, List<Specification> specifications, LocalDateTime createdAt, LocalDateTime updatedAt) {
 		super();
 		this.id = id;
 		this.name = name;
@@ -77,21 +95,16 @@ public class Product { // Updated to "Product" from "Products"
 		MinOrderquantity = minOrderquantity;
 		MaxQuantity = maxQuantity;
 		IncrementStep = incrementStep;
-
 		this.encryptedImages = encryptedImages;
 		this.subcategory = subcategory;
 		this.category = category;
 		this.specifications = specifications;
+		this.createdAt = createdAt;
+		this.updatedAt = updatedAt;
 	}
-
-	
 
 	public BigDecimal getBaseprice() {
 		return baseprice;
-	}
-
-	public void setBaseprice(BigDecimal baseprice) {
-		this.baseprice = baseprice;
 	}
 
 	public Category getCategory() {
@@ -106,9 +119,6 @@ public class Product { // Updated to "Product" from "Products"
 		return description;
 	}
 
-	public List<String> getEncryptedImages() {
-		return encryptedImages;
-	}
 
 	public Long getId() {
 		return id;
@@ -157,6 +167,10 @@ public class Product { // Updated to "Product" from "Products"
 		this.updatedAt = LocalDateTime.now();
 	}
 
+	public void setBaseprice(BigDecimal baseprice) {
+		this.baseprice = baseprice;
+	}
+
 	public void setCategory(Category category) {
 		this.category = category;
 	}
@@ -170,7 +184,12 @@ public class Product { // Updated to "Product" from "Products"
 		this.description = description;
 	}
 
-	public void setEncryptedImages(List<String> encryptedImages) {
+
+	public List<ImageInfo> getEncryptedImages() {
+		return encryptedImages;
+	}
+
+	public void setEncryptedImages(List<ImageInfo> encryptedImages) {
 		this.encryptedImages = encryptedImages;
 	}
 
