@@ -42,7 +42,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
 
 	List<Product> findTop10ByIsDeletedFalseOrderByViewsDesc();
-	
+
 	@Modifying
 	@Query(value = "DELETE FROM specification_option WHERE specification_id IN (SELECT id FROM specification WHERE product_id = :productId)", nativeQuery = true)
 	void deleteSpecOptionsByProductId(@Param("productId") Long productId);
@@ -58,7 +58,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 	@Modifying
 	@Query(value = "DELETE FROM product WHERE id = :productId", nativeQuery = true)
 	void hardDeleteById(@Param("productId") Long productId);
-	
+
 	List<Product> findByIsDeletedFalse();
     Optional<Product> findByIdAndIsDeletedFalse(Long id);
     List<Product> findBySubcategoryAndIsDeletedFalse(Subcategory subcategory);

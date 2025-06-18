@@ -6,8 +6,6 @@ import java.math.RoundingMode;
 import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
-import java.util.Random;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -143,8 +141,8 @@ public class ProductController {
 		        }
 		    })
 		    .collect(Collectors.toList());
-		
-		
+
+
 
 
 		// Create and save the product
@@ -432,7 +430,7 @@ public class ProductController {
 	    }
 	}
 	//====================================================================//
-	
+
 	@PutMapping("/products/{productId}/update")
 	public ResponseEntity<ProductDto> updateProduct(
 	        @PathVariable Long productId,
@@ -450,8 +448,12 @@ public class ProductController {
 	            .orElseThrow(() -> new RuntimeException("Product not found"));
 
 	    // --- Update fields if present ---
-	    if (name != null) product.setName(name);
-	    if (description != null) product.setDescription(description);
+	    if (name != null) {
+			product.setName(name);
+		}
+	    if (description != null) {
+			product.setDescription(description);
+		}
 	    if (baseprice != null) {
 	        try {
 	            BigDecimal price = new BigDecimal(baseprice).setScale(2, RoundingMode.HALF_UP);
@@ -460,9 +462,15 @@ public class ProductController {
 	            throw new BadRequestException("Invalid price", e, false, false, baseprice, baseprice, null);
 	        }
 	    }
-	    if (minOrderQuantity != null) product.setMinOrderquantity(minOrderQuantity);
-	    if (maxQuantity != null) product.setMaxQuantity(maxQuantity);
-	    if (incrementStep != null) product.setIncrementStep(incrementStep);
+	    if (minOrderQuantity != null) {
+			product.setMinOrderquantity(minOrderQuantity);
+		}
+	    if (maxQuantity != null) {
+			product.setMaxQuantity(maxQuantity);
+		}
+	    if (incrementStep != null) {
+			product.setIncrementStep(incrementStep);
+		}
 
 	    // --- Update images if uploaded ---
 	    if (images != null && !images.isEmpty()) {
@@ -559,6 +567,6 @@ public class ProductController {
 	    return ResponseEntity.ok(dto);
 	}
 
-	
+
 
 }
