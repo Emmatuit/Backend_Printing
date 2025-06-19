@@ -95,34 +95,47 @@ public class AuthController {
 
 	@PostMapping("/forgot-password")
 	public ResponseEntity<?> forgotPassword(@RequestBody ForgotPasswordRequest request) {
-		String email = request.getEmail();
-		Optional<UserEntity> optionalUser = userRepository.findByEmail(email);
+	    String email = request.getEmail();
 
-		if (optionalUser.isEmpty()) {
-			return ResponseEntity.badRequest().body(Map.of("error", "Email not found"));
-		}
+	    // ✅ Basic format check
+	    if (email == null || !email.matches("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$")) {
+	        return ResponseEntity.badRequest().body(Map.of("error", "Invalid email format"));
+	    }
 
-		UserEntity user = optionalUser.get();
+	    Optional<UserEntity> optionalUser = userRepository.findByEmail(email);
 
-		String resetCode = String.valueOf((int) (Math.random() * 9000) + 1000);
-		LocalDateTime expiry = LocalDateTime.now().plusMinutes(10);
+	    // ✅ Check if user exists
+	    if (optionalUser.isEmpty()) {
+	        return ResponseEntity.badRequest().body(Map.of("error", "Email not found"));
+	    }
 
-		user.setResetPasswordToken(resetCode);
-		user.setResetTokenExpiry(expiry);
-		userRepository.save(user);
+	    UserEntity user = optionalUser.get();
 
-		String emailBody = "<p>Hello " + user.getUsername() + ",</p>" + "<p>Your password reset code is:</p>"
-				+ "<h2 style='color:blue;'>" + resetCode + "</h2>" + "<p>This code will expire in 10 minutes.</p>";
+	    // ✅ Generate code & save to DB
+	    String resetCode = generateVerificationCode(); // Use your 6-digit version
+	    LocalDateTime expiry = LocalDateTime.now().plusMinutes(10);
 
-		try {
-			emailService.sendVerificationEmail(user.getEmail(), "Password Reset Code", emailBody);
+	    user.setResetPasswordToken(resetCode);
+	    user.setResetTokenExpiry(expiry);
+	    userRepository.save(user);
 
-			return ResponseEntity.ok(Map.of("message", "Password reset code sent", "expiry", expiry.toString()));
-		} catch (Exception e) {
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-					.body(Map.of("error", "Failed to send email: " + e.getMessage()));
-		}
+	    // ✅ Send email
+	    String emailBody = """
+	        <p>Hello %s,</p>
+	        <p>Your password reset code is:</p>
+	        <h2 style='color:blue;'>%s</h2>
+	        <p>This code will expire in 10 minutes.</p>
+	    """.formatted(user.getUsername(), resetCode);
+
+	    try {
+	        emailService.sendVerificationEmail(user.getEmail(), "Password Reset Code", emailBody);
+	        return ResponseEntity.ok(Map.of("message", "Password reset code sent", "expiry", expiry.toString()));
+	    } catch (Exception e) {
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	            .body(Map.of("error", "Failed to send email: " + e.getMessage()));
+	    }
 	}
+
 
 	public String generateVerificationCode() {
 		Random random = new Random();

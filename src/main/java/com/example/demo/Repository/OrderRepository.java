@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import com.example.demo.Enum.OrderStatus;
 import com.example.demo.model.Order;
 import com.example.demo.model.UserEntity;
 
@@ -23,6 +24,9 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     List<Order> findByUser(UserEntity user);
 
     List<Order> findByUserOrderByCreatedAtDesc(UserEntity user);
+    
+    List<Order> findByUserAndStatusOrderByCreatedAtDesc(UserEntity user, OrderStatus status);
+
 
 
 }

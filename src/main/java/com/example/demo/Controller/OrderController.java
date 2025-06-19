@@ -18,11 +18,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.Dto.CheckoutRequest;
 import com.example.demo.Dto.OrderDto;
 import com.example.demo.Dto.OrderItemDto;
+import com.example.demo.Enum.OrderStatus;
 import com.example.demo.Repository.OrderRepository;
 import com.example.demo.Repository.UserRepository;
 import com.example.demo.Service.CheckoutService;
@@ -197,6 +199,45 @@ private final CheckoutService checkoutService;
 	        dto.setItems(items);
 	        return dto;
 	    }
+	 
+	 @GetMapping("/orders/status")
+	 public ResponseEntity<?> getOrdersByOptionalStatus(
+	         @RequestParam(value = "status", required = false) String status,
+	         @AuthenticationPrincipal UserDetails userDetails) {
+
+	     if (userDetails == null) {
+	         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+	             .body(Map.of("error", "User not authenticated"));
+	     }
+
+	     String email = userDetails.getUsername();
+	     Optional<UserEntity> optionalUser = userRepository.findByEmail(email);
+
+	     if (optionalUser.isEmpty()) {
+	         return ResponseEntity.badRequest()
+	             .body(Map.of("error", "User not found"));
+	     }
+
+	     List<Order> orders;
+
+	     if (status != null && !status.isBlank()) {
+	         try {
+	             OrderStatus orderStatus = OrderStatus.valueOf(status.toUpperCase());
+	             orders = orderRepository.findByUserAndStatusOrderByCreatedAtDesc(
+	                     optionalUser.get(), orderStatus);
+	         } catch (IllegalArgumentException e) {
+	             return ResponseEntity.badRequest()
+	                 .body(Map.of("error", "Invalid order status: " + status));
+	         }
+	     } else {
+	         orders = orderRepository.findByUserOrderByCreatedAtDesc(optionalUser.get());
+	     }
+
+	     List<OrderDto> orderDtos = orders.stream().map(this::mapToDto).toList();
+	     return ResponseEntity.ok(orderDtos);
+	 }
+
+
 
 
 
