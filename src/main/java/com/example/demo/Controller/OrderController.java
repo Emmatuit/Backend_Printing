@@ -199,7 +199,7 @@ private final CheckoutService checkoutService;
 	        dto.setItems(items);
 	        return dto;
 	    }
-	 
+
 	 @GetMapping("/orders/status")
 	 public ResponseEntity<?> getOrdersByOptionalStatus(
 	         @RequestParam(value = "status", required = false) String status,

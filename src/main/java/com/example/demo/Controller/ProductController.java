@@ -1,5 +1,7 @@
 package com.example.demo.Controller;
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -7,6 +9,8 @@ import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import javax.imageio.ImageIO;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -25,6 +29,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.example.demo.CustomMultipartFile;
 import com.example.demo.Dto.CartItemDto;
 import com.example.demo.Dto.ProductDto;
 import com.example.demo.Dto.SpecificationDTO;
@@ -57,6 +62,7 @@ import io.imagekit.sdk.exceptions.TooManyRequestsException;
 import io.imagekit.sdk.exceptions.UnauthorizedException;
 import io.imagekit.sdk.exceptions.UnknownException;
 import jakarta.transaction.Transactional;
+import net.coobird.thumbnailator.Thumbnails;
 
 @RestController
 @RequestMapping("/api")
@@ -126,21 +132,23 @@ public class ProductController {
 
 		// Upload product images and convert to ImageInfo list
 		List<ImageInfo> imageInfos = images.stream()
-		    .filter(image -> !image.isEmpty())
-		    .map(image -> {
-		        try {
-		            String url = imagekitService.uploadFileToProduct(image);
+			    .filter(image -> !image.isEmpty())
+			    .map(image -> {
+			        try {
+			            // ✅ Compress the image before uploading
+			            MultipartFile compressedImage = compressImage(image);
 
-		            ImageInfo info = new ImageInfo();
-		            info.setUrl(url);
-//		            info.setFileId(imagekitService.extractFileId(url)); // Optional: only if you have this method
+			            String url = imagekitService.uploadFileToProduct(compressedImage);
 
-		            return info;
-		        } catch (Exception e) {
-		            throw new RuntimeException("Failed to upload image", e);
-		        }
-		    })
-		    .collect(Collectors.toList());
+			            ImageInfo info = new ImageInfo();
+			            info.setUrl(url);
+			            return info;
+			        } catch (Exception e) {
+			            throw new RuntimeException("Failed to upload image", e);
+			        }
+			    })
+			    .collect(Collectors.toList());
+
 
 
 
@@ -189,15 +197,16 @@ public class ProductController {
 				if (optionIndex < specImages.size()) {
 					MultipartFile specImage = specImages.get(optionIndex);
 					if (specImage != null && !specImage.isEmpty()) {
-						String specImageUrl = imagekitService.uploadSpecificationImageFile(specImage);
+					    MultipartFile compressedSpecImage = compressImage(specImage);
 
-						// ✅ Wrap the URL in an ImageInfo object
-						ImageInfo imageInfo = new ImageInfo();
-						imageInfo.setUrl(specImageUrl); // Set URL
-//						imageInfo.setFileId(imagekitService.extractFileId(specImageUrl)); // Optional: extract fileId if you have method
+					    String specImageUrl = imagekitService.uploadSpecificationImageFile(compressedSpecImage);
 
-						option.setImage(imageInfo); // ✅ Set ImageInfo, not String
+					    ImageInfo imageInfo = new ImageInfo();
+					    imageInfo.setUrl(specImageUrl);
+
+					    option.setImage(imageInfo);
 					}
+
 				}
 
 				option.setSpecification(specification);
@@ -342,9 +351,10 @@ public class ProductController {
 		}
 	}
 
+
 	@GetMapping("/products/{id}/similar")
 	public ResponseEntity<?> getSimilarProducts(@PathVariable("id") Long id, @RequestParam(name = "sessionId", required = false) String sessionId,
-			@RequestParam(name = "page",defaultValue = "0") int page, @RequestParam(name = " size", defaultValue = "10") int size, // default
+			@RequestParam(name = "page",defaultValue = "0") int page, @RequestParam(name = "size", defaultValue = "10") int size, // default
 																														// size
 																														// 10
 			Principal principal) {
@@ -566,6 +576,28 @@ public class ProductController {
 	    dto.setSpecifications(fullSpecDtos);
 	    return ResponseEntity.ok(dto);
 	}
+
+
+	public MultipartFile compressImage(MultipartFile originalImage) throws IOException {
+	    BufferedImage bufferedImage = ImageIO.read(originalImage.getInputStream());
+
+	    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+	    Thumbnails.of(bufferedImage)
+	            .size(800, 800)
+	            .outputFormat("jpg")
+	            .outputQuality(0.7)
+	            .toOutputStream(outputStream);
+
+	    byte[] compressedBytes = outputStream.toByteArray();
+
+	    return new CustomMultipartFile(
+	        originalImage.getName(),
+	        originalImage.getOriginalFilename(),
+	        originalImage.getContentType(),
+	        compressedBytes
+	    );
+	}
+
 
 
 

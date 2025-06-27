@@ -29,6 +29,8 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 	// 3. Find all products by subcategory ID, and not deleted
 	List<Product> findBySubcategoryIdAndIsDeletedFalse(Long subcategoryId);
 
+	Page<Product> findBySubcategoryIdAndIsDeletedFalse(Long subcategoryId, Pageable pageable);
+
 	// 4. Find similar products within price range, not deleted, and excluding a product ID
 	@Query("SELECT p FROM Product p WHERE p.category.id = :categoryId "
 	     + "AND p.baseprice BETWEEN :minPrice AND :maxPrice "

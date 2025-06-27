@@ -48,6 +48,10 @@ public class UserEntity {
 
 	private LocalDateTime resetTokenExpiry; // token expiry time
 
+	@Column(nullable = true, updatable = false)
+	private LocalDateTime createdAt = LocalDateTime.now();
+
+
 	public UserEntity() {
 		super();
 		// TODO Auto-generated constructor stub

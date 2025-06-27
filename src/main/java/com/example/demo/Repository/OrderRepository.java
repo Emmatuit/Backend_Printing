@@ -24,7 +24,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     List<Order> findByUser(UserEntity user);
 
     List<Order> findByUserOrderByCreatedAtDesc(UserEntity user);
-    
+
     List<Order> findByUserAndStatusOrderByCreatedAtDesc(UserEntity user, OrderStatus status);
 
 

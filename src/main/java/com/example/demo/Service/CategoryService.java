@@ -11,6 +11,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -291,26 +295,27 @@ return categoryRepository.save(category);
 		return productRepository.findBySubcategoryIdAndIsDeletedFalse(subcategoryId);
 	}
 
-	public CategorySubcategoryProductDto getSubcategoriesAndProductsByCategoryId(Long categoryId) {
-		// Fetch the category by ID
-		Category category = categoryRepository.findById(categoryId)
-				.orElseThrow(() -> new IllegalArgumentException("Invalid category ID"));
+	public CategorySubcategoryProductDto getSubcategoriesAndProductsByCategoryId(Long categoryId, int page, int size) {
+	    // 1. Fetch the category
+	    Category category = categoryRepository.findById(categoryId)
+	            .orElseThrow(() -> new IllegalArgumentException("Invalid category ID"));
 
-		// Get the subcategories associated with the category
-		List<Subcategory> subcategories = subcategoryRepository.findByCategoryId(categoryId);
+	    // 2. Fetch all subcategories for the category
+	    List<Subcategory> subcategories = subcategoryRepository.findByCategoryId(categoryId);
 
-		// For each subcategory, get the associated products
-		List<SubcategoryDto> subcategoryDtos = subcategories.stream().map(subcategory -> {
-			List<Product> products = productRepository.findBySubcategoryIdAndIsDeletedFalse(subcategory.getId());
-			List<ProductDto> productDtos = products.stream().map(this::convertToProductDto)
-					.collect(Collectors.toList());
-			return new SubcategoryDto(subcategory.getId(), subcategory.getName(), productDtos,
-					subcategory.getCategory().getId());
-		}).collect(Collectors.toList());
+	    // 3. For each subcategory, fetch paginated products
+	    List<SubcategoryDto> subcategoryDtos = subcategories.stream().map(subcategory -> {
+	        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+	        Page<Product> pagedProducts = productRepository.findBySubcategoryIdAndIsDeletedFalse(subcategory.getId(), pageable);
+	        List<ProductDto> productDtos = pagedProducts.getContent().stream()
+	                .map(this::convertToProductDto)
+	                .collect(Collectors.toList());
+	        return new SubcategoryDto(subcategory.getId(), subcategory.getName(), productDtos, subcategory.getCategory().getId());
+	    }).collect(Collectors.toList());
 
-		// Return the response DTO
-		return new CategorySubcategoryProductDto(category.getId(), category.getName(), subcategoryDtos);
+	    return new CategorySubcategoryProductDto(category.getId(), category.getName(), subcategoryDtos);
 	}
+
 
 	// Method to prevent duplicate category names
 	public boolean isCategoryNameDuplicate(String categoryName) {
