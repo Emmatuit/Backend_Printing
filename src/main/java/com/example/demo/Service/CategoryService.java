@@ -295,7 +295,7 @@ return categoryRepository.save(category);
 		return productRepository.findBySubcategoryIdAndIsDeletedFalse(subcategoryId);
 	}
 
-	public CategorySubcategoryProductDto getSubcategoriesAndProductsByCategoryId(Long categoryId, int page, int size) {
+	public CategorySubcategoryProductDto getSubcategoriesAndProductsByCategoryId(Long categoryId, Pageable pageable) {
 	    // 1. Fetch the category
 	    Category category = categoryRepository.findById(categoryId)
 	            .orElseThrow(() -> new IllegalArgumentException("Invalid category ID"));
@@ -305,16 +305,30 @@ return categoryRepository.save(category);
 
 	    // 3. For each subcategory, fetch paginated products
 	    List<SubcategoryDto> subcategoryDtos = subcategories.stream().map(subcategory -> {
-	        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-	        Page<Product> pagedProducts = productRepository.findBySubcategoryIdAndIsDeletedFalse(subcategory.getId(), pageable);
+	        Page<Product> pagedProducts = productRepository.findBySubcategoryIdAndIsDeletedFalse(
+	                subcategory.getId(),
+	                PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(Sort.Direction.DESC, "createdAt"))
+	        );
+
 	        List<ProductDto> productDtos = pagedProducts.getContent().stream()
 	                .map(this::convertToProductDto)
 	                .collect(Collectors.toList());
-	        return new SubcategoryDto(subcategory.getId(), subcategory.getName(), productDtos, subcategory.getCategory().getId());
+
+	        return new SubcategoryDto(
+	                subcategory.getId(),
+	                subcategory.getName(),
+	                productDtos,
+	                subcategory.getCategory().getId()
+	        );
 	    }).collect(Collectors.toList());
 
-	    return new CategorySubcategoryProductDto(category.getId(), category.getName(), subcategoryDtos);
+	    return new CategorySubcategoryProductDto(
+	            category.getId(),
+	            category.getName(),
+	            subcategoryDtos
+	    );
 	}
+
 
 
 	// Method to prevent duplicate category names
