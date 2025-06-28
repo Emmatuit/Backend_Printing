@@ -30,6 +30,7 @@ public class OrderDto {
 	private LocalDateTime createdAt;
 	private List<OrderItemDto> items;
 	private String txRef;
+	private String cardLast4;
 
 	private ShippingMethod shippingMethod; // New
 	private String shippingAddress;        // New
@@ -50,7 +51,7 @@ public class OrderDto {
 				BigDecimal shippingFee, BigDecimal grandTotal, String email, String fullName, String phoneNumber,
 				String address1, String address2, String state, String postalCode, String paymentMethod,
 				PaymentStatus paymentStatus, OrderStatus status, LocalDateTime createdAt, List<OrderItemDto> items,
-				ShippingMethod shippingMethod, String shippingAddress, String txRef) {
+				ShippingMethod shippingMethod, String shippingAddress, String txRef, String cardLast4) {
 			super();
 			this.orderId = orderId;
 			this.orderNumber = orderNumber;
@@ -73,6 +74,8 @@ public class OrderDto {
 			this.shippingMethod = shippingMethod;
 			this.shippingAddress = shippingAddress;
 			this.txRef= txRef;
+			this.cardLast4 = cardLast4; 
+			
 		}
 
 		public String getAddress1() {
@@ -225,6 +228,15 @@ public class OrderDto {
 		this.txRef = txRef;
 	}
 
+	public String getCardLast4() {
+		return cardLast4;
+	}
+
+	public void setCardLast4(String cardLast4) {
+		this.cardLast4 = cardLast4;
+	}
+
+	
 
 
 }

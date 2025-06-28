@@ -97,9 +97,12 @@ public class Order {
 	private String orderNumber;
 
 	// Payment fields
-	@Column
+	@Column(name = "payment_method")
 	private String paymentMethod;
 
+	@Column(name = "card_last4")
+	private String cardLast4;
+	
 	@Column
 	private String paymentId; // For payment processor reference
 
@@ -145,7 +148,8 @@ public class Order {
             String fullName, String email, String phoneNumber, String address1,
             String address2, String state, String postalCode,
             OrderStatus status, String orderNumber, ShippingMethod shippingMethod,
-            String shippingAddress, String couponCode, BigDecimal discountAmount, LocalDateTime createdAt, String txRef) {
+            String shippingAddress, String couponCode, BigDecimal discountAmount, LocalDateTime createdAt, String txRef,
+            String paymentMethod, String cardLast4) {
 
    this.id = id;
    this.user = user;
@@ -168,6 +172,8 @@ public class Order {
    this.couponCode = couponCode;
    this.discountAmount = discountAmount != null ? discountAmount.setScale(2, RoundingMode.HALF_UP) : BigDecimal.ZERO;
    this.txRef = txRef;
+   this.paymentMethod = paymentMethod;  // ✅ Save it
+   this.cardLast4 = cardLast4; 
 }
 
 	public String getAddress1() {
@@ -411,6 +417,14 @@ public class Order {
 
 	public void setUser(UserEntity user) {
 		this.user = user;
+	}
+
+	public String getCardLast4() {
+		return cardLast4;
+	}
+
+	public void setCardLast4(String cardLast4) {
+		this.cardLast4 = cardLast4;
 	}
 
 

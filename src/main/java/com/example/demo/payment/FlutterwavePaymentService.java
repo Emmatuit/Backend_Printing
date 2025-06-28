@@ -1,6 +1,5 @@
 package com.example.demo.payment;
 
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -9,11 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -33,7 +28,7 @@ public class FlutterwavePaymentService {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Autowired
-    private OrderRepository orderRepository;
+    private  OrderRepository orderRepository;
 
     @Value("${flutterwave.secret.key}")
     private String FLW_SECRET_KEY;
@@ -55,14 +50,13 @@ public class FlutterwavePaymentService {
 
         Map<String, Object> requestBody = new HashMap<>();
         requestBody.put("tx_ref", txRef);
-        requestBody.put("amount", order.getGrandTotal().toPlainString());
+        requestBody.put("amount", order.getGrandTotal().setScale(2).toPlainString());  // ✅ consistent rounding
         requestBody.put("currency", "NGN");
         requestBody.put("redirect_url", FLW_REDIRECT_URL);
 
         Map<String, String> customer = new HashMap<>();
         customer.put("email", order.getEmail());
         customer.put("name", order.getFullName());
-
         requestBody.put("customer", customer);
 
         HttpHeaders headers = new HttpHeaders();
@@ -77,12 +71,18 @@ public class FlutterwavePaymentService {
             Map<String, Object> responseMap = objectMapper.readValue(response.getBody(), Map.class);
             Map<String, Object> data = (Map<String, Object>) responseMap.get("data");
 
+            if (data == null || data.get("link") == null) {
+                throw new RuntimeException("No payment link returned from Flutterwave");
+            }
+
             String paymentLink = (String) data.get("link");
 
             PaymentResponse paymentResponse = new PaymentResponse();
             PaymentResponse.DataPayload dataPayload = new PaymentResponse.DataPayload();
-            dataPayload.setPaymentlink(paymentLink);
+            dataPayload.setPaymentlink(paymentLink);  // ✅ Correct camelCase
             paymentResponse.setData(dataPayload);
+            paymentResponse.setStatus("success");
+            paymentResponse.setMessage("Payment link generated successfully");
 
             logger.info("Generated payment link: {}", paymentLink);
 
@@ -94,7 +94,7 @@ public class FlutterwavePaymentService {
         }
     }
 
-    // Verify transaction from Flutterwave webhook
+    // Verify transaction
     public TransactionVerificationResponse verifyTransaction(String transactionId) {
 
         String url = FLW_BASE_URL + "/transactions/" + transactionId + "/verify";

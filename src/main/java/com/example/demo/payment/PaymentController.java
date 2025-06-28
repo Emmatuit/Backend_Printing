@@ -10,23 +10,20 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import com.example.demo.Repository.OrderRepository;
 import com.example.demo.Repository.UserRepository;
 import com.example.demo.Service.CheckoutService;
 import com.example.demo.model.Order;
 import com.example.demo.model.UserEntity;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @RestController
 @RequestMapping("/api/payments")
 public class PaymentController {
 
-	private static final Logger logger = LoggerFactory.getLogger(PaymentController.class);
+    private static final Logger logger = LoggerFactory.getLogger(PaymentController.class);
 
     private final FlutterwavePaymentService paymentService;
     private final CheckoutService checkoutService;
@@ -34,14 +31,13 @@ public class PaymentController {
     @Autowired
     private UserRepository userRepository;
 
-
+    @Autowired
+    private OrderRepository orderRepository;
 
     public PaymentController(FlutterwavePaymentService paymentService, CheckoutService checkoutService) {
-		super();
-		this.paymentService = paymentService;
-		this.checkoutService = checkoutService;
-	}
-
+        this.paymentService = paymentService;
+        this.checkoutService = checkoutService;
+    }
 
     @PostMapping("/initiate/{orderNumber}")
     public ResponseEntity<?> initiatePayment(
@@ -54,7 +50,6 @@ public class PaymentController {
         }
 
         String email = userDetails.getUsername();
-
         Optional<UserEntity> optionalUser = userRepository.findByEmail(email);
 
         if (optionalUser.isEmpty()) {
@@ -62,21 +57,17 @@ public class PaymentController {
                     .body(Map.of("error", "Email not found"));
         }
 
-        // Find order
         Order order = checkoutService.getOrderByOrderNumber(orderNumber);
 
-        // OPTIONAL: Validate that this user owns this order
         if (!order.getEmail().equalsIgnoreCase(optionalUser.get().getEmail())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("error", "You do not own this order"));
         }
 
-        // Initialize payment
         PaymentResponse paymentResponse = paymentService.initializePayment(order);
 
         return ResponseEntity.ok(paymentResponse);
     }
-
 
     @GetMapping("/verify")
     public ResponseEntity<Map<String, Object>> verifyPayment(
@@ -85,61 +76,110 @@ public class PaymentController {
             @RequestParam("status") String status
     ) {
         logger.info("Verifying payment for tx_ref: {}, transactionId: {}, status: {}", txRef, transactionId, status);
+        
+        
 
         try {
+            if (txRef == null || !txRef.contains("-")) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "status", "ERROR",
+                        "message", "Invalid tx_ref format"
+                ));
+            }
+
             String[] parts = txRef.split("-");
+            if (parts.length < 2) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "status", "ERROR",
+                        "message", "Invalid tx_ref parts"
+                ));
+            }
+
             String orderNumber = parts[0] + "-" + parts[1];
+
+            Order order = checkoutService.getOrderByOrderNumber(orderNumber);
+
+            if (order == null) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "status", "ERROR",
+                        "message", "Order not found for tx_ref: " + txRef
+                ));
+            }
 
             if ("failed".equalsIgnoreCase(status)) {
                 checkoutService.markOrderAsFailed(orderNumber);
                 return ResponseEntity.ok(Map.of(
-                    "status", "FAILED",
-                    "message", "Payment FAILED from redirect param"
+                        "status", "FAILED",
+                        "message", "Payment FAILED from redirect param"
                 ));
             }
 
             TransactionVerificationResponse verifyResponse = paymentService.verifyTransaction(transactionId);
-            TransactionVerificationResponse.DataPayload data = verifyResponse.getData(); // ✅ correct type
+            logger.info("Full Flutterwave verifyResponse JSON: {}", new ObjectMapper().writeValueAsString(verifyResponse));
 
-            logger.info("Flutterwave verify response: id={}, status={}, amount={}, created_at={}",
-                data.getId(), data.getStatus(), data.getAmount(), data.getCreated_at());
+
+            if (verifyResponse == null || verifyResponse.getData() == null) {
+                logger.error("Invalid verify response or data is null");
+                return ResponseEntity.status(500).body(Map.of(
+                        "status", "ERROR",
+                        "message", "Invalid verification response from Flutterwave"
+                ));
+            }
+
+            TransactionVerificationResponse.DataPayload data = verifyResponse.getData();
+
+            logger.info("Flutterwave verify response: id={}, status={}, amount={}, created_at={}, paymentType={}",
+                    data.getId(), data.getStatus(), data.getAmount(), data.getCreated_at(), data.getPayment_type());
 
             if ("successful".equalsIgnoreCase(data.getStatus())) {
+                String paymentType = data.getPayment_type() != null ? data.getPayment_type() : "Unknown";
+                String last4 = (data.getCard() != null && data.getCard().getLast4digits() != null)
+                	    ? data.getCard().getLast4digits()
+                	    : "****";
+
+
+                order.setPaymentMethod(paymentType);
+                order.setCardLast4(last4);
+                orderRepository.save(order);
+
                 checkoutService.markOrderAsPaid(orderNumber, transactionId);
+
                 return ResponseEntity.ok(Map.of(
-                    "status", "SUCCESS",
-                    "message", "Payment Verified & Order marked as PAID",
-                    "paymentId", data.getId(),
-                    "tx_ref", txRef,
-                    "amount", data.getAmount(),
-                    "currency", data.getCurrency(),
-                    "created_at", data.getCreated_at()
+                        "status", "SUCCESS",
+                        "message", "Payment Verified & Order marked as PAID",
+                        "paymentId", data.getId(),
+                        "tx_ref", txRef,
+                        "amount", data.getAmount(),
+                        "currency", data.getCurrency(),
+                        "created_at", data.getCreated_at(),
+                        "payment_type", paymentType,
+                        "card_last4", last4
                 ));
+
             } else if ("failed".equalsIgnoreCase(data.getStatus())) {
                 checkoutService.markOrderAsFailed(orderNumber);
                 return ResponseEntity.ok(Map.of(
-                    "status", "FAILED",
-                    "message", "Payment Verified as FAILED",
-                    "paymentId", data.getId(),
-                    "tx_ref", txRef
+                        "status", "FAILED",
+                        "message", "Payment Verified as FAILED",
+                        "paymentId", data.getId(),
+                        "tx_ref", txRef
                 ));
             } else {
                 return ResponseEntity.ok(Map.of(
-                    "status", "PENDING",
-                    "message", "Payment not successful yet. Current status: " + data.getStatus(),
-                    "paymentId", data.getId(),
-                    "tx_ref", txRef
+                        "status", "PENDING",
+                        "message", "Payment not successful yet. Current status: " + data.getStatus(),
+                        "paymentId", data.getId(),
+                        "tx_ref", txRef
                 ));
             }
 
         } catch (Exception e) {
             logger.error("Error verifying payment", e);
             return ResponseEntity.status(500).body(Map.of(
-                "status", "ERROR",
-                "message", "Error verifying payment: " + e.getMessage()
+                    "status", "ERROR",
+                    "message", "Error verifying payment: " + e.getMessage()
             ));
         }
     }
-
 
 }
