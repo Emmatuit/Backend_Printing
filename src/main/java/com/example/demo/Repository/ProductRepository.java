@@ -31,17 +31,14 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
 	Page<Product> findBySubcategoryIdAndIsDeletedFalse(Long subcategoryId, Pageable pageable);
 
-	// 4. Find similar products within price range, not deleted, and excluding a product ID
+	// 4. Find similar products within price range, not deleted, and excluding a
+	// product ID
 	@Query("SELECT p FROM Product p WHERE p.category.id = :categoryId "
-	     + "AND p.baseprice BETWEEN :minPrice AND :maxPrice "
-	     + "AND p.id <> :excludedProductId AND p.isDeleted = false")
-	Page<Product> findSimilarProductsNotDeleted(
-	        @Param("categoryId") Long categoryId,
-	        @Param("minPrice") BigDecimal minPrice,
-	        @Param("maxPrice") BigDecimal maxPrice,
-	        @Param("excludedProductId") Long excludedProductId,
-	        Pageable pageable);
-
+			+ "AND p.baseprice BETWEEN :minPrice AND :maxPrice "
+			+ "AND p.id <> :excludedProductId AND p.isDeleted = false")
+	Page<Product> findSimilarProductsNotDeleted(@Param("categoryId") Long categoryId,
+			@Param("minPrice") BigDecimal minPrice, @Param("maxPrice") BigDecimal maxPrice,
+			@Param("excludedProductId") Long excludedProductId, Pageable pageable);
 
 	List<Product> findTop10ByIsDeletedFalseOrderByViewsDesc();
 
@@ -62,9 +59,11 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 	void hardDeleteById(@Param("productId") Long productId);
 
 	List<Product> findByIsDeletedFalse();
-    Optional<Product> findByIdAndIsDeletedFalse(Long id);
-    List<Product> findBySubcategoryAndIsDeletedFalse(Subcategory subcategory);
 
+	Optional<Product> findByIdAndIsDeletedFalse(Long id);
 
+	List<Product> findBySubcategoryAndIsDeletedFalse(Subcategory subcategory);
+
+	long countBySubcategoryId(Long subcategoryId);
 
 }

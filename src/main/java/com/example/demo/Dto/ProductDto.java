@@ -25,6 +25,8 @@ public class ProductDto {
 	private List<SpecificationDTO> specifications;
 	private Long views;
 	private LocalDateTime createdAt;
+	private String categoryName;
+	private String subcategoryName;
 
 	// Constructors
 	public ProductDto() {
@@ -34,7 +36,8 @@ public class ProductDto {
 
 	public ProductDto(long id, String name, String description, BigDecimal basePrice, Integer minOrderQuantity,
 			Integer maxQuantity, Integer incrementStep, Long subcategoryId, Long categoryId,
-			List<ImageInfo> encryptedImages, List<SpecificationDTO> specifications, Long views, LocalDateTime createdAt) {
+			List<ImageInfo> encryptedImages, List<SpecificationDTO> specifications, Long views,
+			LocalDateTime createdAt) {
 		this();
 		this.id = id;
 		this.name = name;
@@ -53,6 +56,7 @@ public class ProductDto {
 		}
 		this.views = views;
 		this.createdAt = createdAt;
+
 	}
 
 	public BigDecimal getBasePrice() {
@@ -171,4 +175,21 @@ public class ProductDto {
 	public void setViews(Long views) {
 		this.views = views;
 	}
+
+	public String getCategoryName() {
+		return categoryName;
+	}
+
+	public void setCategoryName(String categoryName) {
+		this.categoryName = categoryName;
+	}
+
+	public String getSubcategoryName() {
+		return subcategoryName;
+	}
+
+	public void setSubcategoryName(String subcategoryName) {
+		this.subcategoryName = subcategoryName;
+	}
+
 }

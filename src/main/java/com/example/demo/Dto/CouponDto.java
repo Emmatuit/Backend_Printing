@@ -4,13 +4,13 @@ import java.math.BigDecimal;
 
 public class CouponDto {
 
-    private String code;
-    private String discountType;
-    private BigDecimal discountValue;
-    private BigDecimal minPurchaseAmount;
-    private boolean active;
+	private String code;
+	private String discountType;
+	private BigDecimal discountValue;
+	private BigDecimal minPurchaseAmount;
+	private boolean active;
 
- // Constructors, getters and setters...
+	// Constructors, getters and setters...
 
 	public CouponDto(String code, String discountType, BigDecimal discountValue, BigDecimal minPurchaseAmount,
 			boolean active) {
@@ -61,8 +61,5 @@ public class CouponDto {
 	public void setMinPurchaseAmount(BigDecimal minPurchaseAmount) {
 		this.minPurchaseAmount = minPurchaseAmount;
 	}
-
-
-
 
 }

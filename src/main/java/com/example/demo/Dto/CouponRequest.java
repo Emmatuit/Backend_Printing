@@ -2,7 +2,7 @@ package com.example.demo.Dto;
 
 public class CouponRequest {
 
-    private String couponCode;
+	private String couponCode;
 
 	public CouponRequest(String couponCode) {
 		super();
@@ -17,7 +17,5 @@ public class CouponRequest {
 		this.couponCode = couponCode;
 	}
 
-
-
-    // Constructor, getters, setters
+	// Constructor, getters, setters
 }

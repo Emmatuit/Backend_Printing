@@ -74,7 +74,7 @@ public class SubcategoryService {
 				product.getCategory() != null ? product.getCategory().getId() : null, // Prevent null issues
 				product.getEncryptedImages(), specificationDTOs, product.getViews(), // Add views here
 				product.getCreatedAt()
-				// Add createdAt here
+		// Add createdAt here
 		);
 
 	}
@@ -136,12 +136,6 @@ public class SubcategoryService {
 //		return responseDto;
 //	}
 
-
-
-
-
-
-
 	// Custom findById method
 	public Optional<Subcategory> findById1(Long subcategoryId) {
 		return subcategoryRepository.findById(subcategoryId);
@@ -162,6 +156,5 @@ public class SubcategoryService {
 			System.out.println("SubcategoryRepository injected successfully!");
 		}
 	}
-
 
 }

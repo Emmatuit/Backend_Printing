@@ -50,8 +50,6 @@ public class SpecificationOption {
 		return id;
 	}
 
-
-
 	public String getName() {
 		return name;
 	}
@@ -72,8 +70,6 @@ public class SpecificationOption {
 	public void setId(Long id) {
 		this.id = id;
 	}
-
-
 
 	public ImageInfo getImage() {
 		return image;

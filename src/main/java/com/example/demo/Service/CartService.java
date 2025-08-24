@@ -18,14 +18,11 @@ import com.example.demo.Dto.CartItemDto;
 import com.example.demo.Dto.ProductDto;
 import com.example.demo.Dto.SpecificationDTO;
 import com.example.demo.Dto.SpecificationOptionDTO;
-import com.example.demo.Repository.CartItemRepository;
 import com.example.demo.Repository.CartRepository;
 import com.example.demo.Repository.DesignRequestRepository;
 import com.example.demo.Repository.ProductRepository;
 import com.example.demo.Repository.SpecificationOptionRepository;
-import com.example.demo.Repository.SpecificationRepository;
 import com.example.demo.Repository.UserRepository;
-import com.example.demo.calculations.CalculationBased;
 import com.example.demo.model.Cart;
 import com.example.demo.model.CartItem;
 import com.example.demo.model.DesignRequest;
@@ -50,14 +47,6 @@ public class CartService {
 
 	@Autowired
 	private CartRepository cartRepository;
-
-	private SpecificationRepository specificationRepository;
-
-	@Autowired
-	private CartItemRepository cartItemRepository;
-
-	@Autowired
-	private CalculationBased calculationBased;
 
 	@Autowired
 	private ProductService productService;
@@ -110,7 +99,7 @@ public class CartService {
 
 		// Validate quantity
 		int selectedQuantity = cartItemDTO.getSelectedQuantity();
-		List<Integer> validQuantities = calculationBased.generateQuantityOptions(product.getId());
+		List<Integer> validQuantities = productService.generateQuantityOptions(product.getId());
 		if (!validQuantities.contains(selectedQuantity)) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
 					"Invalid quantity selected. Valid quantities are: " + validQuantities);
@@ -170,7 +159,7 @@ public class CartService {
 
 		// Validate quantity
 		int selectedQuantity = cartItemDTO.getSelectedQuantity();
-		List<Integer> validQuantities = calculationBased.generateQuantityOptions(product.getId());
+		List<Integer> validQuantities = productService.generateQuantityOptions(product.getId());
 		if (!validQuantities.contains(selectedQuantity)) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
 					"Invalid quantity selected. Valid quantities are: " + validQuantities);
@@ -193,11 +182,10 @@ public class CartService {
 	}
 
 	public void clearCart(UserEntity user) {
-	    Cart cart = cartRepository.findByUser(user)
-	        .orElseThrow(() -> new RuntimeException("Cart not found for user"));
+		Cart cart = cartRepository.findByUser(user).orElseThrow(() -> new RuntimeException("Cart not found for user"));
 
-	    cart.getItems().clear();
-	    cartRepository.save(cart);
+		cart.getItems().clear();
+		cartRepository.save(cart);
 	}
 
 	@Scheduled(cron = "0 0 */1 * * *") // Every hour (use this as a realistic testing interval)
@@ -246,11 +234,10 @@ public class CartService {
 
 	// ✅ Convert SpecificationOption -> SpecificationOptionDTO
 	private SpecificationOptionDTO convertToSpecificationOptionDto(SpecificationOption option) {
-		return new SpecificationOptionDTO(
-			option.getId(),
-			option.getName(),
-			option.getImage(),
-			option.getPrice() // This now returns ImageInfo
+		return new SpecificationOptionDTO(option.getId(), option.getName(), option.getImage(), option.getPrice() // This
+																													// now
+																													// returns
+																													// ImageInfo
 		);
 	}
 
@@ -263,7 +250,6 @@ public class CartService {
 		optionDTO.setPrice(option.getPrice());
 		return optionDTO;
 	}
-
 
 	public List<CartItemDto> getAllCartItems(String sessionId) {
 		// Fetch the cart by sessionId (return empty if not found)
@@ -357,8 +343,8 @@ public class CartService {
 	}
 
 	public Cart getCartByUser(UserEntity user) {
-	    return cartRepository.findByUser(user)
-	        .orElseThrow(() -> new RuntimeException("Cart not found for user: " + user.getEmail()));
+		return cartRepository.findByUser(user)
+				.orElseThrow(() -> new RuntimeException("Cart not found for user: " + user.getEmail()));
 	}
 
 	@Transactional
@@ -398,7 +384,6 @@ public class CartService {
 		System.out.println("✅ Cart merged successfully for user: " + email);
 	}
 
-
 	private CartItemDto toDto(CartItem cartItem) {
 		CartItemDto dto = new CartItemDto();
 
@@ -412,7 +397,7 @@ public class CartService {
 						.map(this::convertToSpecificationDto).collect(Collectors.toList()) : Collections.emptyList(),
 				product.getViews(), // Added views here
 				product.getCreatedAt()
-				// Added createdAt here
+		// Added createdAt here
 		);
 
 		// Set the converted productDto
@@ -440,7 +425,5 @@ public class CartService {
 
 		return dto;
 	}
-
-
 
 }

@@ -1,14 +1,25 @@
 package com.example.demo;
 
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.CorsFilter;
 
 @Configuration
-public class WebConfig implements WebMvcConfigurer {
-	@Override
-	public void addCorsMappings(CorsRegistry registry) {
-		registry.addMapping("/**").allowedOrigins("http://192.168.152.18:8080" // For Physical Android Device
-		).allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS").allowedHeaders("*").allowCredentials(true);
+public class WebConfig {
+
+	@Bean
+	public CorsFilter corsFilter() {
+		CorsConfiguration config = new CorsConfiguration();
+		config.setAllowCredentials(true);
+		config.addAllowedOriginPattern("http://localhost:*"); // Allow any localhost port
+		config.addAllowedHeader("*");
+		config.addAllowedMethod("*");
+
+		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+		source.registerCorsConfiguration("/**", config);
+
+		return new CorsFilter(source);
 	}
 }

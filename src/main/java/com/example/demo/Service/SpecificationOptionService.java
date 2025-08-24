@@ -28,8 +28,7 @@ public class SpecificationOptionService {
 	}
 
 	public Optional<SpecificationOption> getSpecificationOptionById(Long id) {
-	    return specificationOptionRepository.findById(id);
+		return specificationOptionRepository.findById(id);
 	}
-
 
 }

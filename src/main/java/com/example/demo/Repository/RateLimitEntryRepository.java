@@ -7,5 +7,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import com.example.demo.model.RateLimitEntry;
 
 public interface RateLimitEntryRepository extends JpaRepository<RateLimitEntry, Long> {
-    Optional<RateLimitEntry> findByEmailAndIpAddress(String email, String ipAddress);
+	Optional<RateLimitEntry> findByEmailAndIpAddress(String email, String ipAddress);
 }

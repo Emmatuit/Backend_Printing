@@ -19,8 +19,7 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
 	Category findByIdWithSubcategoriesAndProducts(@Param("categoryId") Long categoryId);
 
 	Optional<Category> findByNameIgnoreCase(String name);
+
 	boolean existsByNameIgnoreCase(String name);
-
-
 
 }

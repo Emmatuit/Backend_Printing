@@ -1,6 +1,5 @@
 package com.example.demo.Repository;
 
-
 import java.util.List;
 import java.util.Optional;
 
@@ -10,15 +9,15 @@ import com.example.demo.model.WishlistItem;
 
 public interface WishlistRepository extends JpaRepository<WishlistItem, Long> {
 
-    List<WishlistItem> findByUserEmail(String email);
+	List<WishlistItem> findByUserEmail(String email);
 
-    Optional<WishlistItem> findByUserEmailAndProductId(String email, Long productId);
+	Optional<WishlistItem> findByUserEmailAndProductId(String email, Long productId);
 
-    void deleteByUserEmailAndProductId(String email, Long productId);
+	void deleteByUserEmailAndProductId(String email, Long productId);
 
-    List<WishlistItem> findBySessionId(String sessionId);
+	List<WishlistItem> findBySessionId(String sessionId);
 
-    Optional<WishlistItem> findBySessionIdAndProductId(String sessionId, Long productId);
+	Optional<WishlistItem> findBySessionIdAndProductId(String sessionId, Long productId);
 
-    void deleteBySessionIdAndProductId(String sessionId, Long productId);
+	void deleteBySessionIdAndProductId(String sessionId, Long productId);
 }

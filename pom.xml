@@ -56,11 +56,6 @@
 			<artifactId>mysql-connector-j</artifactId>
 			<scope>runtime</scope>
 		</dependency>
-		<dependency>
-			<groupId>org.projectlombok</groupId>
-			<artifactId>lombok</artifactId>
-			<optional>true</optional>
-		</dependency>
 		
 		<!-- ImageKit SDK -->
         <dependency>
@@ -69,6 +64,14 @@
             <version>2.0.0</version>
         </dependency>
         
+        <!-- https://mvnrepository.com/artifact/org.springdoc/springdoc-openapi-ui -->
+<!-- https://mvnrepository.com/artifact/org.springdoc/springdoc-openapi-starter-webmvc-ui -->
+<dependency>
+    <groupId>org.springdoc</groupId>
+    <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+    <version>2.7.0</version>
+</dependency>
+   
        <!-- https://mvnrepository.com/artifact/com.sendgrid/sendgrid-java -->
 <dependency>
     <groupId>com.sendgrid</groupId>
@@ -87,8 +90,6 @@
     <artifactId>thumbnailator</artifactId>
     <version>0.4.19</version>
 </dependency>
-
-
 
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -155,28 +156,16 @@
                 <compilerArgs>
                     <arg>-parameters</arg>
                 </compilerArgs>
-                <annotationProcessorPaths>
-                    <path>
-                        <groupId>org.projectlombok</groupId>
-                        <artifactId>lombok</artifactId>
-                    </path>
-                </annotationProcessorPaths>
+               
             </configuration>
         </plugin>
 
         <!-- Spring Boot Plugin -->
-        <plugin>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-maven-plugin</artifactId>
-            <configuration>
-                <excludes>
-                    <exclude>
-                        <groupId>org.projectlombok</groupId>
-                        <artifactId>lombok</artifactId>
-                    </exclude>
-                </excludes>
-            </configuration>
-        </plugin>
+       <plugin>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-maven-plugin</artifactId>
+</plugin>
+
     </plugins>
 </build>
 

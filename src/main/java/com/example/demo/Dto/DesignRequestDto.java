@@ -19,6 +19,11 @@ public class DesignRequestDto {
 		this.fileId = fileId;
 	}
 
+	public DesignRequestDto() {
+		super();
+		// TODO Auto-generated constructor stub
+	}
+
 	public String getDescription() {
 		return description;
 	}

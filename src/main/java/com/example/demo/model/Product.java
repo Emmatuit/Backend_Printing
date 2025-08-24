@@ -53,7 +53,6 @@ public class Product { // Updated to "Product" from "Products"
 	@OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<Specification> specifications = new ArrayList<>();
 
-
 	// ✅ Track total views
 	@Column(nullable = false)
 	private Long views = 0L;
@@ -69,20 +68,17 @@ public class Product { // Updated to "Product" from "Products"
 	@Column(name = "is_deleted")
 	private Boolean isDeleted = false;
 
-	 public Boolean getIsDeleted() {
-		    return isDeleted;
-		}
+	public Boolean getIsDeleted() {
+		return isDeleted;
+	}
 
-		public void setIsDeleted(Boolean deleted) {
-		    isDeleted = deleted;
-		}
+	public void setIsDeleted(Boolean deleted) {
+		isDeleted = deleted;
+	}
 
 	// Default constructor
 	public Product() {
 	}
-
-
-
 
 	public Product(Long id, String name, String description, BigDecimal baseprice, Integer minOrderquantity,
 			Integer maxQuantity, Integer incrementStep, List<ImageInfo> encryptedImages, Subcategory subcategory,
@@ -118,7 +114,6 @@ public class Product { // Updated to "Product" from "Products"
 	public String getDescription() {
 		return description;
 	}
-
 
 	public Long getId() {
 		return id;
@@ -183,7 +178,6 @@ public class Product { // Updated to "Product" from "Products"
 	public void setDescription(String description) {
 		this.description = description;
 	}
-
 
 	public List<ImageInfo> getEncryptedImages() {
 		return encryptedImages;

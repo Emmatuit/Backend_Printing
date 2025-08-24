@@ -51,6 +51,8 @@ public class UserEntity {
 	@Column(nullable = true, updatable = false)
 	private LocalDateTime createdAt = LocalDateTime.now();
 
+	@Column
+	private LocalDateTime suspendedUntil;
 
 	public UserEntity() {
 		super();
@@ -155,6 +157,22 @@ public class UserEntity {
 		this.verificationCodeExpiry = verificationCodeExpiry;
 	}
 
+	public LocalDateTime getCreatedAt() {
+		return createdAt;
+	}
+
+	public void setCreatedAt(LocalDateTime createdAt) {
+		this.createdAt = createdAt;
+	}
+
+	public LocalDateTime getSuspendedUntil() {
+		return suspendedUntil;
+	}
+
+	public void setSuspendedUntil(LocalDateTime suspendedUntil) {
+		this.suspendedUntil = suspendedUntil;
+	}
+
 	@Override
 	public String toString() {
 		return "UserEntity [id=" + id + ", username=" + username + ", password=" + password + ", email=" + email
@@ -162,5 +180,9 @@ public class UserEntity {
 	}
 
 	// Additional fields if needed
+
+	public boolean isSuspended() {
+		return suspendedUntil != null && LocalDateTime.now().isBefore(suspendedUntil);
+	}
 
 }

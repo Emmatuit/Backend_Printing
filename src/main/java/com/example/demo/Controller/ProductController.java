@@ -14,6 +14,9 @@ import javax.imageio.ImageIO;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -106,16 +109,18 @@ public class ProductController {
 
 	@PostMapping("/{subcategoryId}/addProduct")
 	public ResponseEntity<ProductDto> addProductToSubcategory1(@PathVariable("subcategoryId") Long subcategoryId,
-			@RequestParam("name") String name, @RequestParam("description") String description, @RequestParam("baseprice") String basePriceStr, // Changed
-																															// from
-																															// Double
-																															// to
-																															// String
-			@RequestParam("minOrderQuantity") Integer minOrderQuantity, @RequestParam("maxQuantity") Integer maxQuantity,
-			@RequestParam("incrementStep") Integer incrementStep, @RequestParam("images") List<MultipartFile> images,
-			@RequestParam("specificationsJson") String specificationsJson, @RequestParam("specImages") List<MultipartFile> specImages)
-			throws IOException, InternalServerException, BadRequestException, UnknownException, ForbiddenException,
-			TooManyRequestsException, UnauthorizedException {
+			@RequestParam("name") String name, @RequestParam("description") String description,
+			@RequestParam("baseprice") String basePriceStr, // Changed
+			// from
+			// Double
+			// to
+			// String
+			@RequestParam("minOrderQuantity") Integer minOrderQuantity,
+			@RequestParam("maxQuantity") Integer maxQuantity, @RequestParam("incrementStep") Integer incrementStep,
+			@RequestParam("images") List<MultipartFile> images,
+			@RequestParam("specificationsJson") String specificationsJson,
+			@RequestParam("specImages") List<MultipartFile> specImages) throws IOException, InternalServerException,
+			BadRequestException, UnknownException, ForbiddenException, TooManyRequestsException, UnauthorizedException {
 
 		// Validate price input
 		BigDecimal basePrice;
@@ -131,27 +136,20 @@ public class ProductController {
 				.orElseThrow(() -> new RuntimeException("Subcategory not found"));
 
 		// Upload product images and convert to ImageInfo list
-		List<ImageInfo> imageInfos = images.stream()
-			    .filter(image -> !image.isEmpty())
-			    .map(image -> {
-			        try {
-			            // ✅ Compress the image before uploading
-			            MultipartFile compressedImage = compressImage(image);
+		List<ImageInfo> imageInfos = images.stream().filter(image -> !image.isEmpty()).map(image -> {
+			try {
+				// ✅ Compress the image before uploading
+				MultipartFile compressedImage = compressImage(image);
 
-			            String url = imagekitService.uploadFileToProduct(compressedImage);
+				String url = imagekitService.uploadFileToProduct(compressedImage);
 
-			            ImageInfo info = new ImageInfo();
-			            info.setUrl(url);
-			            return info;
-			        } catch (Exception e) {
-			            throw new RuntimeException("Failed to upload image", e);
-			        }
-			    })
-			    .collect(Collectors.toList());
-
-
-
-
+				ImageInfo info = new ImageInfo();
+				info.setUrl(url);
+				return info;
+			} catch (Exception e) {
+				throw new RuntimeException("Failed to upload image", e);
+			}
+		}).collect(Collectors.toList());
 
 		// Create and save the product
 		Product product = new Product();
@@ -197,14 +195,14 @@ public class ProductController {
 				if (optionIndex < specImages.size()) {
 					MultipartFile specImage = specImages.get(optionIndex);
 					if (specImage != null && !specImage.isEmpty()) {
-					    MultipartFile compressedSpecImage = compressImage(specImage);
+						MultipartFile compressedSpecImage = compressImage(specImage);
 
-					    String specImageUrl = imagekitService.uploadSpecificationImageFile(compressedSpecImage);
+						String specImageUrl = imagekitService.uploadSpecificationImageFile(compressedSpecImage);
 
-					    ImageInfo imageInfo = new ImageInfo();
-					    imageInfo.setUrl(specImageUrl);
+						ImageInfo imageInfo = new ImageInfo();
+						imageInfo.setUrl(specImageUrl);
 
-					    option.setImage(imageInfo);
+						option.setImage(imageInfo);
 					}
 
 				}
@@ -242,7 +240,8 @@ public class ProductController {
 	// ================================================//
 	@PostMapping("/calculateTotalPrice")
 	public ResponseEntity<BigDecimal> calculateTotalPrice(@RequestParam("productId") Long productId,
-			@RequestParam("selectedQuantity") Integer selectedQuantity, @RequestBody List<Long> selectedSpecificationIds) {
+			@RequestParam("selectedQuantity") Integer selectedQuantity,
+			@RequestBody List<Long> selectedSpecificationIds) {
 		try {
 			// Call the service to calculate the total price
 			BigDecimal totalPrice = productService.calculateTotalPrice(productId, selectedQuantity,
@@ -269,11 +268,14 @@ public class ProductController {
 		dto.setEncryptedImages(product.getEncryptedImages());
 		dto.setSubcategoryId(product.getSubcategory().getId());
 		dto.setCategoryId(product.getCategory().getId());
+		dto.setCategoryName(product.getCategory().getName());
+		dto.setSubcategoryName(product.getSubcategory().getName());
 		return dto;
 	}
 
 	@GetMapping("/CalculateSubtotal")
-	public ResponseEntity<BigDecimal> getCartSubtotal(@RequestParam(name = "sessionId", required = false) String sessionId,
+	public ResponseEntity<BigDecimal> getCartSubtotal(
+			@RequestParam(name = "sessionId", required = false) String sessionId,
 			@AuthenticationPrincipal UserDetails userDetails) {
 
 		System.out.println("🔐 Authenticated User: " + (userDetails != null ? userDetails.getUsername() : "null"));
@@ -351,12 +353,13 @@ public class ProductController {
 		}
 	}
 
-
 	@GetMapping("/products/{id}/similar")
-	public ResponseEntity<?> getSimilarProducts(@PathVariable("id") Long id, @RequestParam(name = "sessionId", required = false) String sessionId,
-			@RequestParam(name = "page",defaultValue = "0") int page, @RequestParam(name = "size", defaultValue = "10") int size, // default
-																														// size
-																														// 10
+	public ResponseEntity<?> getSimilarProducts(@PathVariable("id") Long id,
+			@RequestParam(name = "sessionId", required = false) String sessionId,
+			@RequestParam(name = "page", defaultValue = "0") int page,
+			@RequestParam(name = "size", defaultValue = "10") int size, // default
+			// size
+			// 10
 			Principal principal) {
 		if (principal == null && sessionId == null) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Unauthorized: Provide sessionId or JWT");
@@ -397,7 +400,8 @@ public class ProductController {
 	}
 
 	@GetMapping("/search")
-	public ResponseEntity<?> searchProducts(@RequestParam("name") String name, @RequestParam(name = "sessionId", required = false) String sessionId,
+	public ResponseEntity<?> searchProducts(@RequestParam("name") String name,
+			@RequestParam(name = "sessionId", required = false) String sessionId,
 
 			Principal principal) {
 		// Allow either JWT (via Principal) or sessionId for access
@@ -414,191 +418,214 @@ public class ProductController {
 	@Transactional
 	@DeleteMapping("/products/{id}/soft-delete")
 	public ResponseEntity<String> softDeleteProduct(@PathVariable("id") Long id) {
-	    Optional<Product> productOptional = productRepository.findById(id);
+		Optional<Product> productOptional = productRepository.findById(id);
 
-	    if (productOptional.isEmpty()) {
-	        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Product not found");
-	    }
+		if (productOptional.isEmpty()) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Product not found");
+		}
 
-	    Product product = productOptional.get();
-	    product.setIsDeleted(true);
-	    productRepository.save(product);
+		Product product = productOptional.get();
+		product.setIsDeleted(true);
+		productRepository.save(product);
 
-	    return ResponseEntity.ok("Product soft deleted successfully");
+		return ResponseEntity.ok("Product soft deleted successfully");
 	}
-
 
 	@DeleteMapping("/products/permanent/{productId}")
 	public ResponseEntity<String> deleteProductPermanently(@PathVariable("productId") Long productId) {
-	    try {
-	        productService.deleteProductPermanently(productId);
-	        return ResponseEntity.ok("Product permanently deleted.");
-	    } catch (IllegalArgumentException e) {
-	        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-	    } catch (Exception e) {
-	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error deleting product.");
-	    }
+		try {
+			productService.deleteProductPermanently(productId);
+			return ResponseEntity.ok("Product permanently deleted.");
+		} catch (IllegalArgumentException e) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error deleting product.");
+		}
 	}
-	//====================================================================//
+
+	// ====================================================================//
+	// API to get quantity options for a product
+	@GetMapping("/products/{productId}/quantity-options")
+	public ResponseEntity<List<Integer>> getQuantityOptions(@PathVariable("productId") Long productId) {
+		List<Integer> quantityOptions = productService.generateQuantityOptions(productId);
+		return ResponseEntity.ok(quantityOptions);
+	}
+	// =====================================================================//
 
 	@PutMapping("/products/{productId}/update")
-	public ResponseEntity<ProductDto> updateProduct(
-	        @PathVariable Long productId,
-	        @RequestParam(required = false) String name,
-	        @RequestParam(required = false) String description,
-	        @RequestParam(required = false) String baseprice,
-	        @RequestParam(required = false) Integer minOrderQuantity,
-	        @RequestParam(required = false) Integer maxQuantity,
-	        @RequestParam(required = false) Integer incrementStep,
-	        @RequestParam(required = false) List<MultipartFile> images,
-	        @RequestParam(required = false) String specificationsJson,
-	        @RequestParam(required = false) List<MultipartFile> specImages
-	) throws Exception {
-	    Product product = productRepository.findById(productId)
-	            .orElseThrow(() -> new RuntimeException("Product not found"));
+	public ResponseEntity<ProductDto> updateProduct(@PathVariable Long productId,
+			@RequestParam(required = false) String name, @RequestParam(required = false) String description,
+			@RequestParam(required = false) String baseprice, @RequestParam(required = false) Integer minOrderQuantity,
+			@RequestParam(required = false) Integer maxQuantity, @RequestParam(required = false) Integer incrementStep,
+			@RequestParam(required = false) List<MultipartFile> images,
+			@RequestParam(required = false) String specificationsJson,
+			@RequestParam(required = false) List<MultipartFile> specImages) throws Exception {
+		Product product = productRepository.findById(productId)
+				.orElseThrow(() -> new RuntimeException("Product not found"));
 
-	    // --- Update fields if present ---
-	    if (name != null) {
+		// --- Update fields if present ---
+		if (name != null) {
 			product.setName(name);
 		}
-	    if (description != null) {
+		if (description != null) {
 			product.setDescription(description);
 		}
-	    if (baseprice != null) {
-	        try {
-	            BigDecimal price = new BigDecimal(baseprice).setScale(2, RoundingMode.HALF_UP);
-	            product.setBaseprice(price);
-	        } catch (NumberFormatException e) {
-	            throw new BadRequestException("Invalid price", e, false, false, baseprice, baseprice, null);
-	        }
-	    }
-	    if (minOrderQuantity != null) {
+		if (baseprice != null) {
+			try {
+				BigDecimal price = new BigDecimal(baseprice).setScale(2, RoundingMode.HALF_UP);
+				product.setBaseprice(price);
+			} catch (NumberFormatException e) {
+				throw new BadRequestException("Invalid price", e, false, false, baseprice, baseprice, null);
+			}
+		}
+		if (minOrderQuantity != null) {
 			product.setMinOrderquantity(minOrderQuantity);
 		}
-	    if (maxQuantity != null) {
+		if (maxQuantity != null) {
 			product.setMaxQuantity(maxQuantity);
 		}
-	    if (incrementStep != null) {
+		if (incrementStep != null) {
 			product.setIncrementStep(incrementStep);
 		}
 
-	    // --- Update images if uploaded ---
-	    if (images != null && !images.isEmpty()) {
-	        List<ImageInfo> imageInfos = images.stream()
-	                .filter(image -> !image.isEmpty())
-	                .map(image -> {
-	                    try {
-	                        String url = imagekitService.uploadFileToProduct(image);
-	                        ImageInfo info = new ImageInfo();
-	                        info.setUrl(url);
-	                        return info;
-	                    } catch (Exception e) {
-	                        throw new RuntimeException("Image upload failed", e);
-	                    }
-	                }).collect(Collectors.toList());
-	        product.setEncryptedImages(imageInfos);
-	    }
+		// --- Update images if uploaded ---
+		if (images != null && !images.isEmpty()) {
+			List<ImageInfo> imageInfos = images.stream().filter(image -> !image.isEmpty()).map(image -> {
+				try {
+					String url = imagekitService.uploadFileToProduct(image);
+					ImageInfo info = new ImageInfo();
+					info.setUrl(url);
+					return info;
+				} catch (Exception e) {
+					throw new RuntimeException("Image upload failed", e);
+				}
+			}).collect(Collectors.toList());
+			product.setEncryptedImages(imageInfos);
+		}
 
-	    // Save base product changes
-	    product = productService.saveProduct(product);
+		// Save base product changes
+		product = productService.saveProduct(product);
 
-	    // --- Update specifications if provided ---
-	    if (specificationsJson != null) {
-	        ObjectMapper mapper = new ObjectMapper();
-	        List<SpecificationDTO> specDtos = mapper.readValue(specificationsJson, new TypeReference<>() {});
+		// --- Update specifications if provided ---
+		if (specificationsJson != null) {
+			ObjectMapper mapper = new ObjectMapper();
+			List<SpecificationDTO> specDtos = mapper.readValue(specificationsJson, new TypeReference<>() {
+			});
 
-	        int specImageIndex = 0;
+			int specImageIndex = 0;
 
-	        for (SpecificationDTO specDto : specDtos) {
-	            Specification specification;
-	            if (specDto.getId() != null) {
-	                // Update existing spec
-	                specification = specificationService.getSpecificationById(specDto.getId())
-	                        .orElseThrow(() -> new RuntimeException("Specification not found: ID " + specDto.getId()));
-	                specification.setName(specDto.getName());
-	            } else {
-	                // Create new spec
-	                specification = new Specification();
-	                specification.setName(specDto.getName());
-	                specification.setProduct(product);
-	            }
-	            specification = specificationService.saveSpecification(specification);
+			for (SpecificationDTO specDto : specDtos) {
+				Specification specification;
+				if (specDto.getId() != null) {
+					// Update existing spec
+					specification = specificationService.getSpecificationById(specDto.getId())
+							.orElseThrow(() -> new RuntimeException("Specification not found: ID " + specDto.getId()));
+					specification.setName(specDto.getName());
+				} else {
+					// Create new spec
+					specification = new Specification();
+					specification.setName(specDto.getName());
+					specification.setProduct(product);
+				}
+				specification = specificationService.saveSpecification(specification);
 
-	            for (SpecificationOptionDTO optDto : specDto.getOptions()) {
-	                SpecificationOption option;
-	                if (optDto.getId() != null) {
-	                    option = specificationOptionService.getSpecificationOptionById(optDto.getId())
-	                            .orElseThrow(() -> new RuntimeException("Option not found: ID " + optDto.getId()));
-	                    option.setName(optDto.getName());
-	                } else {
-	                    option = new SpecificationOption();
-	                    option.setName(optDto.getName());
-	                    option.setSpecification(specification);
-	                }
+				for (SpecificationOptionDTO optDto : specDto.getOptions()) {
+					SpecificationOption option;
+					if (optDto.getId() != null) {
+						option = specificationOptionService.getSpecificationOptionById(optDto.getId())
+								.orElseThrow(() -> new RuntimeException("Option not found: ID " + optDto.getId()));
+						option.setName(optDto.getName());
+					} else {
+						option = new SpecificationOption();
+						option.setName(optDto.getName());
+						option.setSpecification(specification);
+					}
 
-	                // Update option price
-	                BigDecimal optPrice = new BigDecimal(optDto.getPrice().toString()).setScale(2, RoundingMode.HALF_UP);
-	                option.setPrice(optPrice);
+					// Update option price
+					BigDecimal optPrice = new BigDecimal(optDto.getPrice().toString()).setScale(2,
+							RoundingMode.HALF_UP);
+					option.setPrice(optPrice);
 
-	                // Upload image if specImages are passed
-	                if (specImages != null && specImageIndex < specImages.size()) {
-	                    MultipartFile specImage = specImages.get(specImageIndex);
-	                    if (specImage != null && !specImage.isEmpty()) {
-	                        String imageUrl = imagekitService.uploadSpecificationImageFile(specImage);
-	                        ImageInfo img = new ImageInfo();
-	                        img.setUrl(imageUrl);
-	                        option.setImage(img);
-	                        specImageIndex++;
-	                    }
-	                }
+					// Upload image if specImages are passed
+					if (specImages != null && specImageIndex < specImages.size()) {
+						MultipartFile specImage = specImages.get(specImageIndex);
+						if (specImage != null && !specImage.isEmpty()) {
+							String imageUrl = imagekitService.uploadSpecificationImageFile(specImage);
+							ImageInfo img = new ImageInfo();
+							img.setUrl(imageUrl);
+							option.setImage(img);
+							specImageIndex++;
+						}
+					}
 
-	                specificationOptionService.saveSpecificationOption(option);
-	            }
-	        }
-	    }
+					specificationOptionService.saveSpecificationOption(option);
+				}
+			}
+		}
 
-	    // --- Prepare response DTO ---
-	    ProductDto dto = convertToProductDto(product);
-	    List<Specification> specs = specificationService.getSpecificationsByProduct(product);
-	    List<SpecificationDTO> fullSpecDtos = specs.stream().map(spec -> {
-	        SpecificationDTO sDto = new SpecificationDTO();
-	        sDto.setId(spec.getId());
-	        sDto.setName(spec.getName());
-	        List<SpecificationOptionDTO> optionDtos = specificationOptionService
-	                .getSpecificationOptionsBySpecification(spec)
-	                .stream()
-	                .map(opt -> new SpecificationOptionDTO(opt.getId(), opt.getName(), opt.getImage(), opt.getPrice()))
-	                .collect(Collectors.toList());
-	        sDto.setOptions(optionDtos);
-	        return sDto;
-	    }).collect(Collectors.toList());
+		// --- Prepare response DTO ---
+		ProductDto dto = convertToProductDto(product);
+		List<Specification> specs = specificationService.getSpecificationsByProduct(product);
+		List<SpecificationDTO> fullSpecDtos = specs.stream().map(spec -> {
+			SpecificationDTO sDto = new SpecificationDTO();
+			sDto.setId(spec.getId());
+			sDto.setName(spec.getName());
+			List<SpecificationOptionDTO> optionDtos = specificationOptionService
+					.getSpecificationOptionsBySpecification(spec).stream()
+					.map(opt -> new SpecificationOptionDTO(opt.getId(), opt.getName(), opt.getImage(), opt.getPrice()))
+					.collect(Collectors.toList());
+			sDto.setOptions(optionDtos);
+			return sDto;
+		}).collect(Collectors.toList());
 
-	    dto.setSpecifications(fullSpecDtos);
-	    return ResponseEntity.ok(dto);
+		dto.setSpecifications(fullSpecDtos);
+		return ResponseEntity.ok(dto);
 	}
-
 
 	public MultipartFile compressImage(MultipartFile originalImage) throws IOException {
-	    BufferedImage bufferedImage = ImageIO.read(originalImage.getInputStream());
+		BufferedImage bufferedImage = ImageIO.read(originalImage.getInputStream());
 
-	    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-	    Thumbnails.of(bufferedImage)
-	            .size(800, 800)
-	            .outputFormat("jpg")
-	            .outputQuality(0.7)
-	            .toOutputStream(outputStream);
+		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+		Thumbnails.of(bufferedImage).size(800, 800).outputFormat("jpg").outputQuality(0.7).toOutputStream(outputStream);
 
-	    byte[] compressedBytes = outputStream.toByteArray();
+		byte[] compressedBytes = outputStream.toByteArray();
 
-	    return new CustomMultipartFile(
-	        originalImage.getName(),
-	        originalImage.getOriginalFilename(),
-	        originalImage.getContentType(),
-	        compressedBytes
-	    );
+		return new CustomMultipartFile(originalImage.getName(), originalImage.getOriginalFilename(),
+				originalImage.getContentType(), compressedBytes);
 	}
 
+	@GetMapping("/products/getAllProducts")
+	public ResponseEntity<List<ProductDto>> getAllProducts(@RequestParam(name = "page", defaultValue = "0") int page,
+			@RequestParam(name = "size", defaultValue = "10") int size) {
+		Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+		Page<Product> productPage = productRepository.findAll(pageable);
 
+		List<ProductDto> productDtos = productPage.getContent().stream().map(product -> {
+			ProductDto productDto = convertToProductDto(product); // Use same method you're using in your first API
 
+			// Load specifications for each product
+			List<Specification> specifications = specificationRepository.findByProductId(product.getId());
+
+			List<SpecificationDTO> specificationDtos = specifications.stream().map(spec -> {
+				SpecificationDTO specDto = new SpecificationDTO();
+				specDto.setId(spec.getId());
+				specDto.setName(spec.getName());
+				specDto.setOptions(spec.getOptions().stream().map(option -> {
+					SpecificationOptionDTO optionDto = new SpecificationOptionDTO();
+					optionDto.setId(option.getId());
+					optionDto.setName(option.getName());
+					optionDto.setPrice(option.getPrice());
+					optionDto.setImage(option.getImage());
+					return optionDto;
+				}).collect(Collectors.toList()));
+				return specDto;
+			}).collect(Collectors.toList());
+
+			productDto.setSpecifications(specificationDtos);
+			return productDto;
+		}).collect(Collectors.toList());
+
+		return ResponseEntity.ok(productDtos);
+	}
 
 }

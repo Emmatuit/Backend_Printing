@@ -32,8 +32,6 @@ public class SpecificationOptionDTO {
 		return id;
 	}
 
-
-
 	public ImageInfo getImage() {
 		return image;
 	}

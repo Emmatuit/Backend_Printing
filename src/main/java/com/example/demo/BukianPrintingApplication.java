@@ -7,9 +7,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
 @EnableScheduling
-@EnableSpringDataWebSupport(
-    pageSerializationMode = EnableSpringDataWebSupport.PageSerializationMode.VIA_DTO
-)
+@EnableSpringDataWebSupport(pageSerializationMode = EnableSpringDataWebSupport.PageSerializationMode.VIA_DTO)
 public class BukianPrintingApplication {
 
 	public static void main(String[] args) {

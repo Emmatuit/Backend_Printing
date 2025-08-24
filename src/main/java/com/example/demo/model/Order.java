@@ -35,7 +35,7 @@ public class Order {
 	}
 
 	public enum ShippingMethod {
-	    PICKUP, DELIVERY
+		PICKUP, DELIVERY
 	}
 
 	@Id
@@ -57,7 +57,6 @@ public class Order {
 
 	@Column(nullable = false, precision = 19, scale = 2)
 	private BigDecimal shippingFee = BigDecimal.ZERO;
-
 
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
@@ -89,7 +88,6 @@ public class Order {
 	@Column(nullable = false)
 	private String state;
 
-
 	@Column(nullable = false)
 	private String postalCode;
 
@@ -102,13 +100,11 @@ public class Order {
 
 	@Column(name = "card_last4")
 	private String cardLast4;
-	
+
 	@Column
 	private String paymentId; // For payment processor reference
 
 	private String couponCode;
-
-
 
 	private BigDecimal discountAmount;
 
@@ -122,11 +118,9 @@ public class Order {
 	@Column
 	private LocalDateTime paymentDate;
 
-
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
 	private OrderStatus status = OrderStatus.PENDING;
-
 
 	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
 	@Column(nullable = false, updatable = false)
@@ -138,43 +132,46 @@ public class Order {
 
 	// Add pre-persist and pre-update methods
 
+	@Column
+	private String trackingNumber;
 
 	public Order() {
 		super();
 		// TODO Auto-generated constructor stub
 	}
 
-	public Order(Long id, UserEntity user, List<OrderItem> items, BigDecimal totalAmount,
-            String fullName, String email, String phoneNumber, String address1,
-            String address2, String state, String postalCode,
-            OrderStatus status, String orderNumber, ShippingMethod shippingMethod,
-            String shippingAddress, String couponCode, BigDecimal discountAmount, LocalDateTime createdAt, String txRef,
-            String paymentMethod, String cardLast4) {
+	public Order(Long id, UserEntity user, List<OrderItem> items, BigDecimal totalAmount, String fullName, String email,
+			String phoneNumber, String address1, String address2, String state, String postalCode, OrderStatus status,
+			String orderNumber, ShippingMethod shippingMethod, String shippingAddress, String couponCode,
+			BigDecimal discountAmount, LocalDateTime createdAt, String txRef, String paymentMethod, String cardLast4,
+			String trackingNumber) {
 
-   this.id = id;
-   this.user = user;
-   this.items = items;
-   this.totalAmount = totalAmount != null ? totalAmount.setScale(2, RoundingMode.HALF_UP) : BigDecimal.ZERO;
-   this.fullName = fullName;
-   this.email = email;
-   this.phoneNumber = phoneNumber;
-   this.address1 = address1;
-   this.address2 = address2;
-   this.state = state;
+		this.id = id;
+		this.user = user;
+		this.items = items;
+		this.totalAmount = totalAmount != null ? totalAmount.setScale(2, RoundingMode.HALF_UP) : BigDecimal.ZERO;
+		this.fullName = fullName;
+		this.email = email;
+		this.phoneNumber = phoneNumber;
+		this.address1 = address1;
+		this.address2 = address2;
+		this.state = state;
 
-   this.postalCode = postalCode;
-   this.status = status != null ? status : OrderStatus.PENDING;
-   this.orderNumber = orderNumber;
-   this.shippingMethod = shippingMethod != null ? shippingMethod : ShippingMethod.DELIVERY;
-   this.shippingAddress = shippingAddress;
-   this.createdAt = createdAt;
+		this.postalCode = postalCode;
+		this.status = status != null ? status : OrderStatus.PENDING;
+		this.orderNumber = orderNumber;
+		this.shippingMethod = shippingMethod != null ? shippingMethod : ShippingMethod.DELIVERY;
+		this.shippingAddress = shippingAddress;
+		this.createdAt = createdAt;
 
-   this.couponCode = couponCode;
-   this.discountAmount = discountAmount != null ? discountAmount.setScale(2, RoundingMode.HALF_UP) : BigDecimal.ZERO;
-   this.txRef = txRef;
-   this.paymentMethod = paymentMethod;  // ✅ Save it
-   this.cardLast4 = cardLast4; 
-}
+		this.couponCode = couponCode;
+		this.discountAmount = discountAmount != null ? discountAmount.setScale(2, RoundingMode.HALF_UP)
+				: BigDecimal.ZERO;
+		this.txRef = txRef;
+		this.paymentMethod = paymentMethod; // ✅ Save it
+		this.cardLast4 = cardLast4;
+		this.trackingNumber = trackingNumber;
+	}
 
 	public String getAddress1() {
 		return address1;
@@ -184,20 +181,19 @@ public class Order {
 		return address2;
 	}
 
-
 	public String getCouponCode() {
-        return couponCode;
-    }
+		return couponCode;
+	}
 
-    public LocalDateTime getCreatedAt() {
+	public LocalDateTime getCreatedAt() {
 		return createdAt;
 	}
 
-    public BigDecimal getDiscountAmount() {
-        return discountAmount;
-    }
+	public BigDecimal getDiscountAmount() {
+		return discountAmount;
+	}
 
-    public String getEmail() {
+	public String getEmail() {
 		return email;
 	}
 
@@ -301,6 +297,14 @@ public class Order {
 		}
 	}
 
+	public String getTrackingNumber() {
+		return trackingNumber;
+	}
+
+	public void setTrackingNumber(String trackingNumber) {
+		this.trackingNumber = trackingNumber;
+	}
+
 	@PreUpdate
 	protected void onUpdate() {
 		updatedAt = LocalDateTime.now();
@@ -315,16 +319,17 @@ public class Order {
 	}
 
 	public void setCouponCode(String couponCode) {
-        this.couponCode = couponCode;
-    }
+		this.couponCode = couponCode;
+	}
 
 	public void setCreatedAt(LocalDateTime createdAt) {
 		this.createdAt = createdAt;
 	}
 
 	public void setDiscountAmount(BigDecimal discountAmount) {
-        this.discountAmount = discountAmount != null ? discountAmount.setScale(2, RoundingMode.HALF_UP) : BigDecimal.ZERO;
-    }
+		this.discountAmount = discountAmount != null ? discountAmount.setScale(2, RoundingMode.HALF_UP)
+				: BigDecimal.ZERO;
+	}
 
 	public void setEmail(String email) {
 		this.email = email;
@@ -426,9 +431,5 @@ public class Order {
 	public void setCardLast4(String cardLast4) {
 		this.cardLast4 = cardLast4;
 	}
-
-
-
-
 
 }

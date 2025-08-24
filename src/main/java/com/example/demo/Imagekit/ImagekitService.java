@@ -32,40 +32,37 @@ public class ImagekitService {
 	}
 
 	public boolean deleteFileFromImageKit(String fileId) {
-	    try {
-	        imageKit.deleteFile(fileId); // Use SDK's delete method
-	        return true;
-	    } catch (Exception e) {
-	        System.err.println("ImageKit deletion failed for fileId: " + fileId);
-	        e.printStackTrace();
-	        return false;
-	    }
+		try {
+			imageKit.deleteFile(fileId); // Use SDK's delete method
+			return true;
+		} catch (Exception e) {
+			System.err.println("ImageKit deletion failed for fileId: " + fileId);
+			e.printStackTrace();
+			return false;
+		}
 	}
 
+	public ImageInfo uploadFile(MultipartFile file) throws IOException, InternalServerException, BadRequestException,
+			UnknownException, ForbiddenException, TooManyRequestsException, UnauthorizedException {
 
+		FileCreateRequest fileCreateRequest = new FileCreateRequest(file.getBytes(), file.getOriginalFilename());
+		fileCreateRequest.setFolder("/categories");
 
-	public ImageInfo uploadFile(MultipartFile file)
-	        throws IOException, InternalServerException, BadRequestException,
-	        UnknownException, ForbiddenException, TooManyRequestsException, UnauthorizedException {
+		Result result = imageKit.upload(fileCreateRequest);
 
-	    FileCreateRequest fileCreateRequest = new FileCreateRequest(file.getBytes(), file.getOriginalFilename());
-	    fileCreateRequest.setFolder("/categories");
-
-	    Result result = imageKit.upload(fileCreateRequest);
-
-	    if (result != null && result.getUrl() != null && result.getFileId() != null) {
-	        return new ImageInfo(result.getUrl(), result.getFileId());
-	    } else {
-	        throw new IOException("Failed to upload image to ImageKit");
-	    }
+		if (result != null && result.getUrl() != null && result.getFileId() != null) {
+			return new ImageInfo(result.getUrl(), result.getFileId());
+		} else {
+			throw new IOException("Failed to upload image to ImageKit");
+		}
 	}
 
-	public Result uploadFileWithResult(MultipartFile file) throws IOException, InternalServerException, BadRequestException, UnknownException, ForbiddenException, TooManyRequestsException, UnauthorizedException{
-	    FileCreateRequest request = new FileCreateRequest(file.getBytes(), file.getOriginalFilename());
-	    request.setFolder("/categories");
-	    return imageKit.upload(request);
+	public Result uploadFileWithResult(MultipartFile file) throws IOException, InternalServerException,
+			BadRequestException, UnknownException, ForbiddenException, TooManyRequestsException, UnauthorizedException {
+		FileCreateRequest request = new FileCreateRequest(file.getBytes(), file.getOriginalFilename());
+		request.setFolder("/categories");
+		return imageKit.upload(request);
 	}
-
 
 	public String uploadFileToProduct(MultipartFile file) throws IOException, InternalServerException,
 			BadRequestException, UnknownException, ForbiddenException, TooManyRequestsException, UnauthorizedException {

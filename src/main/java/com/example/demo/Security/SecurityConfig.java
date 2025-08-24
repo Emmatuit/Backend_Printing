@@ -9,6 +9,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -34,22 +35,22 @@ public class SecurityConfig {
 	@Autowired
 	private UserDetailsService userDetailsService;
 
-    @Bean
-    AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration)
-            throws Exception {
+	@Bean
+	AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration)
+			throws Exception {
 		return authenticationConfiguration.getAuthenticationManager();
 	}
 
-    @Bean
-    AuthenticationProvider authenticationProvider() {
+	@Bean
+	AuthenticationProvider authenticationProvider() {
 		DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
 		authProvider.setUserDetailsService(userDetailsService);
 		authProvider.setPasswordEncoder(passwordEncoder());
 		return authProvider;
 	}
 
-    @Bean
-    CorsConfigurationSource corsConfigurationSource() {
+	@Bean
+	CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration configuration = new CorsConfiguration();
 
 		configuration.setAllowedOrigins(List.of("http://localhost:59327"));
@@ -62,32 +63,45 @@ public class SecurityConfig {
 		return source;
 	}
 
-    @Bean
-    PasswordEncoder passwordEncoder() {
+	@Bean
+	PasswordEncoder passwordEncoder() {
 		return new BCryptPasswordEncoder(12);
 	}
 
-    @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-		http.csrf(csrf -> csrf.disable()).cors(cors -> cors.configurationSource(corsConfigurationSource())) // Add CORS
-																											// configuration
-				.authorizeHttpRequests(auth -> auth.requestMatchers("/api/auth/register", "/api/auth/login1", "/api/**")
-						.permitAll().requestMatchers(HttpMethod.GET, "/api/cart/items").permitAll()
-						.requestMatchers(HttpMethod.DELETE, "/api/cart/remove").permitAll() // ✅ Allow guests to remove
-						.requestMatchers(HttpMethod.GET, "/api/cart/count").permitAll()
-						.requestMatchers(HttpMethod.POST, "/api/cart/logout").permitAll()
-						.requestMatchers(HttpMethod.GET, "/api/CalculateSubtotal").permitAll()
-						// ✅ Allow guests to count
-						.requestMatchers("/api/place", "/api/auth/change-password1").authenticated() // Only logged-in
-																										// users can
-																										// place orders
-						.anyRequest().authenticated())
+	@Bean
+	SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+		http.csrf(csrf -> csrf.disable()).cors(Customizer.withDefaults()).authorizeHttpRequests(auth -> auth
+				// 1️⃣ Permit Swagger UI & API docs WITHOUT authentication
+				.requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/swagger-resources/**",
+						"/webjars/**")
+				.permitAll()
+
+				// 2️⃣ Permit public API endpoints
+				.requestMatchers("/api/auth/register", "/api/auth/login1").permitAll()
+
+				// 3️⃣ Permit specific API GET/POST/DELETE requests
+				.requestMatchers(HttpMethod.GET, "/api/cart/items").permitAll()
+				.requestMatchers(HttpMethod.DELETE, "/api/cart/remove").permitAll()
+				.requestMatchers(HttpMethod.GET, "/api/cart/count").permitAll()
+				.requestMatchers(HttpMethod.POST, "/api/cart/logout").permitAll()
+				.requestMatchers(HttpMethod.GET, "/api/CalculateSubtotal").permitAll()
+				.requestMatchers(HttpMethod.GET, "/api/admin/orders/{id}").permitAll()
+
+				// 4️⃣ Admin endpoint with role restriction
+				.requestMatchers("/api/admin/login").permitAll().requestMatchers("/api/admin/**").hasRole("ADMIN")
+
+				// 5️⃣ Authenticated users only for some endpoints
+				.requestMatchers("/api/place", "/api/auth/change-password1").authenticated()
+
+				// 6️⃣ All other requests require authentication
+				.anyRequest().authenticated())
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
-				.authenticationProvider(authenticationProvider()).logout(logout -> logout.logoutUrl("/api/logout")
-						.logoutSuccessHandler((request, response, authentication) -> {
-							response.setStatus(HttpServletResponse.SC_OK);
-						}).invalidateHttpSession(true).deleteCookies("JSESSIONID").permitAll());
+				.authenticationProvider(authenticationProvider())
+				.logout(logout -> logout.logoutUrl("/api/logout")
+						.logoutSuccessHandler(
+								(request, response, authentication) -> response.setStatus(HttpServletResponse.SC_OK))
+						.invalidateHttpSession(true).deleteCookies("JSESSIONID").permitAll());
 
 		return http.build();
 	}

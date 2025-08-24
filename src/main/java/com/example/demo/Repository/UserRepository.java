@@ -21,6 +21,8 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 	Optional<UserEntity> findByUsername(String username);
 
 	@Query("SELECT u FROM UserEntity u WHERE u.isEmailVerified = false AND u.createdAt < :cutoff")
-    List<UserEntity> findUnverifiedUsersBefore(@Param("cutoff") LocalDateTime cutoff);
-}
+	List<UserEntity> findUnverifiedUsersBefore(@Param("cutoff") LocalDateTime cutoff);
 
+	List<UserEntity> findBySuspendedUntilBefore(LocalDateTime time);
+
+}

@@ -13,15 +13,15 @@ import com.example.demo.model.UserEntity;
 @Component
 public class UnverifiedUserCleanupTask {
 
-    @Autowired
-    private UserRepository userRepository;
+	@Autowired
+	private UserRepository userRepository;
 
-    // Runs once a day at midnight (00:00)
-    @Scheduled(cron = "0 0 0 * * ?") // Every day at midnight
-    public void deleteOldUnverifiedUsers() {
-        LocalDateTime threshold = LocalDateTime.now().minusDays(7);
-        List<UserEntity> expired = userRepository.findUnverifiedUsersBefore(threshold);
-        userRepository.deleteAll(expired);
-        System.out.println("Deleted " + expired.size() + " unverified users older than 7 days.");
-    }
+	// Runs once a day at midnight (00:00)
+	@Scheduled(cron = "0 0 0 * * ?") // Every day at midnight
+	public void deleteOldUnverifiedUsers() {
+		LocalDateTime threshold = LocalDateTime.now().minusDays(7);
+		List<UserEntity> expired = userRepository.findUnverifiedUsersBefore(threshold);
+		userRepository.deleteAll(expired);
+		System.out.println("Deleted " + expired.size() + " unverified users older than 7 days.");
+	}
 }

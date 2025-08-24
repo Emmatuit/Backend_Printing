@@ -24,67 +24,64 @@ import com.example.demo.model.UserEntity;
 @RequestMapping("/api/wishlist")
 public class WishlistController {
 
-    private final WishlistService wishlistService;
-    private final UserRepository userRepository;
+	private final WishlistService wishlistService;
+	private final UserRepository userRepository;
 
-    public WishlistController(WishlistService wishlistService, UserRepository userRepository) {
-        this.wishlistService = wishlistService;
-        this.userRepository = userRepository;
-    }
+	public WishlistController(WishlistService wishlistService, UserRepository userRepository) {
+		this.wishlistService = wishlistService;
+		this.userRepository = userRepository;
+	}
 
-    @PostMapping("/{productId}")
-    public ResponseEntity<?> addToWishlist(@PathVariable("productId") Long productId,
-                                           @RequestParam(required = false, name = "sessionId") String sessionId,
-                                           @AuthenticationPrincipal UserDetails userDetails) {
+	@PostMapping("/{productId}")
+	public ResponseEntity<?> addToWishlist(@PathVariable("productId") Long productId,
+			@RequestParam(required = false, name = "sessionId") String sessionId,
+			@AuthenticationPrincipal UserDetails userDetails) {
 
-        String email = (userDetails != null) ? userDetails.getUsername() : null;
+		String email = (userDetails != null) ? userDetails.getUsername() : null;
 
-        if (email != null) {
-            Optional<UserEntity> optionalUser = userRepository.findByEmail(email);
-            if (optionalUser.isEmpty()) {
-                return ResponseEntity.badRequest()
-                        .body(Map.of("error", "User not found"));
-            }
-        }
+		if (email != null) {
+			Optional<UserEntity> optionalUser = userRepository.findByEmail(email);
+			if (optionalUser.isEmpty()) {
+				return ResponseEntity.badRequest().body(Map.of("error", "User not found"));
+			}
+		}
 
-        wishlistService.addToWishlist(email, sessionId, productId);
-        return ResponseEntity.ok(Map.of("message", "Product added to wishlist"));
-    }
+		wishlistService.addToWishlist(email, sessionId, productId);
+		return ResponseEntity.ok(Map.of("message", "Product added to wishlist"));
+	}
 
-    @DeleteMapping("/{productId}")
-    public ResponseEntity<?> removeFromWishlist(@PathVariable("productId") Long productId,
-                                                @RequestParam(required = false, name = "sessionId") String sessionId,
-                                                @AuthenticationPrincipal UserDetails userDetails) {
+	@DeleteMapping("/{productId}")
+	public ResponseEntity<?> removeFromWishlist(@PathVariable("productId") Long productId,
+			@RequestParam(required = false, name = "sessionId") String sessionId,
+			@AuthenticationPrincipal UserDetails userDetails) {
 
-        String email = (userDetails != null) ? userDetails.getUsername() : null;
+		String email = (userDetails != null) ? userDetails.getUsername() : null;
 
-        if (email != null) {
-            Optional<UserEntity> optionalUser = userRepository.findByEmail(email);
-            if (optionalUser.isEmpty()) {
-                return ResponseEntity.badRequest()
-                        .body(Map.of("error", "User not found"));
-            }
-        }
+		if (email != null) {
+			Optional<UserEntity> optionalUser = userRepository.findByEmail(email);
+			if (optionalUser.isEmpty()) {
+				return ResponseEntity.badRequest().body(Map.of("error", "User not found"));
+			}
+		}
 
-        wishlistService.removeFromWishlist(email, sessionId, productId);
-        return ResponseEntity.ok(Map.of("message", "Product removed from wishlist"));
-    }
+		wishlistService.removeFromWishlist(email, sessionId, productId);
+		return ResponseEntity.ok(Map.of("message", "Product removed from wishlist"));
+	}
 
-    @GetMapping
-    public ResponseEntity<?> getWishlist(@RequestParam(required = false, name = "sessionId") String sessionId,
-                                         @AuthenticationPrincipal UserDetails userDetails) {
+	@GetMapping
+	public ResponseEntity<?> getWishlist(@RequestParam(required = false, name = "sessionId") String sessionId,
+			@AuthenticationPrincipal UserDetails userDetails) {
 
-        String email = (userDetails != null) ? userDetails.getUsername() : null;
+		String email = (userDetails != null) ? userDetails.getUsername() : null;
 
-        if (email != null) {
-            Optional<UserEntity> optionalUser = userRepository.findByEmail(email);
-            if (optionalUser.isEmpty()) {
-                return ResponseEntity.badRequest()
-                        .body(Map.of("error", "User not found"));
-            }
-        }
+		if (email != null) {
+			Optional<UserEntity> optionalUser = userRepository.findByEmail(email);
+			if (optionalUser.isEmpty()) {
+				return ResponseEntity.badRequest().body(Map.of("error", "User not found"));
+			}
+		}
 
-        List<WishlistItemDto> wishlist = wishlistService.getWishlist(email, sessionId);
-        return ResponseEntity.ok(wishlist);
-    }
+		List<WishlistItemDto> wishlist = wishlistService.getWishlist(email, sessionId);
+		return ResponseEntity.ok(wishlist);
+	}
 }

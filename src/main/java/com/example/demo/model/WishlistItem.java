@@ -11,19 +11,19 @@ import jakarta.persistence.ManyToOne;
 @Entity
 public class WishlistItem {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
 
-    @ManyToOne
-    private UserEntity user;  // nullable, because guest user may not be logged in yet
+	@ManyToOne
+	private UserEntity user; // nullable, because guest user may not be logged in yet
 
-    private String sessionId; // for guest users
+	private String sessionId; // for guest users
 
-    @ManyToOne(optional = false)
-    private Product product;
+	@ManyToOne(optional = false)
+	private Product product;
 
-    private LocalDateTime addedAt = LocalDateTime.now();
+	private LocalDateTime addedAt = LocalDateTime.now();
 
 	public Long getId() {
 		return id;
@@ -79,6 +79,4 @@ public class WishlistItem {
 		// TODO Auto-generated constructor stub
 	}
 
-
 }
-

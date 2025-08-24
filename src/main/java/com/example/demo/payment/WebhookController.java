@@ -67,7 +67,10 @@ package com.example.demo.payment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.Repository.OrderRepository;
 import com.example.demo.Service.CheckoutService;
@@ -79,56 +82,57 @@ import jakarta.transaction.Transactional;
 @RequestMapping("/api/webhook")
 public class WebhookController {
 
-    private static final Logger logger = LoggerFactory.getLogger(WebhookController.class);
+	private static final Logger logger = LoggerFactory.getLogger(WebhookController.class);
 
-    private final CheckoutService checkoutService;
-    private final OrderRepository orderRepository;
+	private final CheckoutService checkoutService;
+	private final OrderRepository orderRepository;
 
-    public WebhookController(CheckoutService checkoutService, OrderRepository orderRepository) {
-        this.checkoutService = checkoutService;
-        this.orderRepository = orderRepository;
-    }
+	public WebhookController(CheckoutService checkoutService, OrderRepository orderRepository) {
+		this.checkoutService = checkoutService;
+		this.orderRepository = orderRepository;
+	}
 
-    @PostMapping("/flutterwave")
-    @Transactional
-    public ResponseEntity<String> handleFlutterwaveWebhook(@RequestBody WebhookPayload webhookPayload) {
-        logger.info("Received Flutterwave webhook: {}", webhookPayload);
+	@PostMapping("/flutterwave")
+	@Transactional
+	public ResponseEntity<String> handleFlutterwaveWebhook(@RequestBody WebhookPayload webhookPayload) {
+		logger.info("Received Flutterwave webhook: {}", webhookPayload);
 
-        try {
-            WebhookPayload.DataPayload data = webhookPayload.getData();
+		try {
+			WebhookPayload.DataPayload data = webhookPayload.getData();
 
-            String txRef = data.getTxRef();
-            String paymentStatus = data.getStatus();
-            String paymentType = data.getPaymentType(); // ✅ New field
-            String last4 = (data.getCard() != null) ? data.getCard().getLast4digits() : null;
+			String txRef = data.getTxRef();
+			String paymentStatus = data.getStatus();
+			String paymentType = data.getPaymentType(); // ✅ New field
+			String last4 = (data.getCard() != null) ? data.getCard().getLast4digits() : null;
 
-            Order order = checkoutService.getOrderByTxRef(txRef);
+			Order order = checkoutService.getOrderByTxRef(txRef);
 
-            if (order == null) {
-                logger.warn("No order found for txRef: {}", txRef);
-                return ResponseEntity.badRequest().body("Invalid order reference");
-            }
+			if (order == null) {
+				logger.warn("No order found for txRef: {}", txRef);
+				return ResponseEntity.badRequest().body("Invalid order reference");
+			}
 
-            if ("successful".equalsIgnoreCase(paymentStatus) &&
-                order.getPaymentStatus() != Order.PaymentStatus.COMPLETED) {
+			if ("successful".equalsIgnoreCase(paymentStatus)
+					&& order.getPaymentStatus() != Order.PaymentStatus.COMPLETED) {
 
-                order.setPaymentMethod(paymentType);  // ✅ Save payment method
-                order.setCardLast4(last4);            // ✅ Save last 4 digits (if any)
-                orderRepository.save(order);          // ✅ Save changes before marking as paid
+				order.setPaymentMethod(paymentType); // ✅ Save payment method
+				order.setCardLast4(last4); // ✅ Save last 4 digits (if any)
+				orderRepository.save(order); // ✅ Save changes before marking as paid
 
-                checkoutService.markOrderAsPaid(order.getOrderNumber(), "WEBHOOK"); // you can pass flw_ref if you prefer
-                logger.info("Order {} marked as PAID via webhook", order.getOrderNumber());
+				checkoutService.markOrderAsPaid(order.getOrderNumber(), "WEBHOOK"); // you can pass flw_ref if you
+																					// prefer
+				logger.info("Order {} marked as PAID via webhook", order.getOrderNumber());
 
-            } else {
-                logger.warn("Payment not successful or already paid. Status: {} | Order: {}", paymentStatus, order.getOrderNumber());
-            }
+			} else {
+				logger.warn("Payment not successful or already paid. Status: {} | Order: {}", paymentStatus,
+						order.getOrderNumber());
+			}
 
-            return ResponseEntity.ok("Webhook received");
+			return ResponseEntity.ok("Webhook received");
 
-        } catch (Exception e) {
-            logger.error("Error processing Flutterwave webhook", e);
-            return ResponseEntity.status(500).body("Error processing webhook");
-        }
-    }
+		} catch (Exception e) {
+			logger.error("Error processing Flutterwave webhook", e);
+			return ResponseEntity.status(500).body("Error processing webhook");
+		}
+	}
 }
-

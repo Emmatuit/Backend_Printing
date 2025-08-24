@@ -50,9 +50,9 @@ public class CartController {
 	private UserRepository userRepository;
 
 	@PostMapping("/add")
-	public ResponseEntity<String> addItemToCart(@RequestParam(name = "sessionId",required = false) String sessionId,
-			@RequestParam(name = "email",required = false) String email, @RequestParam("designRequestId") Long designRequestId,
-			@RequestBody CartItemDto cartItemDto) {
+	public ResponseEntity<String> addItemToCart(@RequestParam(name = "sessionId", required = false) String sessionId,
+			@RequestParam(name = "email", required = false) String email,
+			@RequestParam("designRequestId") Long designRequestId, @RequestBody CartItemDto cartItemDto) {
 		if (cartItemDto.getProduct() == null || cartItemDto.getSelectedOptions() == null) {
 			return ResponseEntity.badRequest().body("Product or selected options cannot be null.");
 		}
@@ -92,8 +92,9 @@ public class CartController {
 	}
 
 	@GetMapping("/items")
-	public ResponseEntity<List<CartItemDto>> getAllCartItems(@RequestParam(name = "sessionId", required = false) String sessionId,
-			@RequestParam(name = "email",required = false) String email) {
+	public ResponseEntity<List<CartItemDto>> getAllCartItems(
+			@RequestParam(name = "sessionId", required = false) String sessionId,
+			@RequestParam(name = "email", required = false) String email) {
 
 		List<CartItemDto> cartItems;
 
@@ -141,7 +142,8 @@ public class CartController {
 
 	@DeleteMapping("/remove")
 	public ResponseEntity<String> removeFromCart(@RequestParam("productId") Long productId,
-			@RequestParam(name = "sessionId",required = false) String sessionId, @AuthenticationPrincipal UserDetails userDetails) {
+			@RequestParam(name = "sessionId", required = false) String sessionId,
+			@AuthenticationPrincipal UserDetails userDetails) {
 
 		try {
 			Optional<Cart> optionalCart;

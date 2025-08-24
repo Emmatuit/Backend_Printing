@@ -92,7 +92,8 @@ public class DesignRequestController {
 	}
 
 	@PostMapping("/upload")
-	public ResponseEntity<?> uploadDesignRequest(@RequestParam("file") MultipartFile file, @RequestParam("description") String description) {
+	public ResponseEntity<?> uploadDesignRequest(@RequestParam("file") MultipartFile file,
+			@RequestParam("description") String description) {
 
 		try {
 			// Validate file size (Max 10MB)

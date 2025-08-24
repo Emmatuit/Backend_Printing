@@ -68,57 +68,49 @@ public class CategoryController {
 	}
 
 	@PostMapping(value = "/add", consumes = { "multipart/form-data" })
-	public ResponseEntity<CategoryDto> addCategory(
-	        @RequestParam("name") String name,
-	        @RequestParam("description") String description,
-	        @RequestParam("images") List<MultipartFile> images)
-	        throws IOException, InternalServerException, BadRequestException,
-	        UnknownException, ForbiddenException, TooManyRequestsException, UnauthorizedException {
+	public ResponseEntity<CategoryDto> addCategory(@RequestParam("name") String name,
+			@RequestParam("description") String description, @RequestParam("images") List<MultipartFile> images)
+			throws IOException, InternalServerException, BadRequestException, UnknownException, ForbiddenException,
+			TooManyRequestsException, UnauthorizedException {
 
-	    List<ImageInfo> uploadedImages = new ArrayList<>();
+		List<ImageInfo> uploadedImages = new ArrayList<>();
 
-	    for (MultipartFile image : images) {
-	        ImageInfo imageInfo = imagekitService.uploadFile(image); // ✅ store URL and fileId
-	        uploadedImages.add(imageInfo);
-	    }
+		for (MultipartFile image : images) {
+			ImageInfo imageInfo = imagekitService.uploadFile(image); // ✅ store URL and fileId
+			uploadedImages.add(imageInfo);
+		}
 
-	    Category category = new Category();
-	    category.setName(name);
-	    category.setDescription(description);
-	    category.setImages(uploadedImages); // ✅ store full image info list
+		Category category = new Category();
+		category.setName(name);
+		category.setDescription(description);
+		category.setImages(uploadedImages); // ✅ store full image info list
 
-	    Category savedCategory = categoryService.addCategory(category);
-	    CategoryDto savedCategoryDto = convertToCategoryDto(savedCategory);
+		Category savedCategory = categoryService.addCategory(category);
+		CategoryDto savedCategoryDto = convertToCategoryDto(savedCategory);
 
-	    return ResponseEntity.ok(savedCategoryDto);
+		return ResponseEntity.ok(savedCategoryDto);
 	}
-
 
 	// Convert Category entity to CategoryDto
 	private CategoryDto convertToCategoryDto(Category category) {
-	    CategoryDto categoryDto = new CategoryDto();
-	    categoryDto.setId(category.getId());
-	    categoryDto.setName(category.getName());
-	    categoryDto.setDescription(category.getDescription());
+		CategoryDto categoryDto = new CategoryDto();
+		categoryDto.setId(category.getId());
+		categoryDto.setName(category.getName());
+		categoryDto.setDescription(category.getDescription());
 
-	    // ✅ Extract only the image URLs from the ImageInfo objects
-	    List<String> imageUrls = category.getImages() != null
-	            ? category.getImages().stream()
-	                      .map(ImageInfo::getUrl)
-	                      .collect(Collectors.toList())
-	            : new ArrayList<>();
+		// ✅ Extract only the image URLs from the ImageInfo objects
+		List<String> imageUrls = category.getImages() != null
+				? category.getImages().stream().map(ImageInfo::getUrl).collect(Collectors.toList())
+				: new ArrayList<>();
 
-	    categoryDto.setEncryptedImages(imageUrls); // Still using same field name in DTO for simplicity
+		categoryDto.setEncryptedImages(imageUrls); // Still using same field name in DTO for simplicity
 
-	    // ✅ Convert subcategories
-	    categoryDto.setSubcategories(
-	        category.getSubcategories() != null
-	            ? category.getSubcategories().stream()
-	                      .map(this::convertToSubcategoryDto)
-	                      .collect(Collectors.toList())
-	            : new ArrayList<>());
+		// ✅ Convert subcategories
+		categoryDto.setSubcategories(category.getSubcategories() != null
+				? category.getSubcategories().stream().map(this::convertToSubcategoryDto).collect(Collectors.toList())
+				: new ArrayList<>());
 
-	    return categoryDto;
+		return categoryDto;
 	}
 
 	// ✅ Convert Product -> ProductDto
@@ -133,7 +125,7 @@ public class CategoryController {
 				product.getCategory() != null ? product.getCategory().getId() : null, // Prevent null issues
 				product.getEncryptedImages(), specificationDTOs, product.getViews(), // Add views here
 				product.getCreatedAt()
-				// Add createdAt here
+		// Add createdAt here
 		);
 
 	}
@@ -167,8 +159,8 @@ public class CategoryController {
 	// DELETE /api/categories/{categoryId}/delete
 	@DeleteMapping("/categories/{categoryId}/delete")
 	public ResponseEntity<Void> deleteCategory(@PathVariable("categoryId") Long categoryId) {
-	    categoryService.deleteCategory(categoryId);
-	    return ResponseEntity.noContent().build(); // HTTP 204
+		categoryService.deleteCategory(categoryId);
+		return ResponseEntity.noContent().build(); // HTTP 204
 	}
 
 	// Api to get all the Category http://localhost:8080/api/categories
@@ -180,54 +172,48 @@ public class CategoryController {
 
 	@GetMapping("/categories/exists")
 	public ResponseEntity<?> checkCategoryExists(@RequestParam("name") String name) {
-	    boolean exists = categoryRepository.existsByNameIgnoreCase(name.trim());
+		boolean exists = categoryRepository.existsByNameIgnoreCase(name.trim());
 
-	    if (exists) {
-	        return ResponseEntity.status(HttpStatus.CONFLICT).body("Category already exists");
-	    } else {
-	        return ResponseEntity.ok("Category does not exist. You can proceed.");
-	    }
+		if (exists) {
+			return ResponseEntity.status(HttpStatus.CONFLICT).body("Category already exists");
+		} else {
+			return ResponseEntity.ok("Category does not exist. You can proceed.");
+		}
 	}
 
 	@GetMapping("/categories/check-full")
 	public ResponseEntity<?> checkCategoryFull(@RequestParam("name") String name) {
-	    Optional<Category> categoryOpt = categoryRepository.findByNameIgnoreCase(name.trim());
+		Optional<Category> categoryOpt = categoryRepository.findByNameIgnoreCase(name.trim());
 
-	    if (categoryOpt.isPresent()) {
-	        CategoryDto dto = convertToCategoryDto(categoryOpt.get());
-	        return ResponseEntity.ok(Map.of("exists", true, "category", dto));
-	    } else {
-	        return ResponseEntity.ok(Map.of("exists", false, "message", "Category does not exist. You can proceed."));
-	    }
+		if (categoryOpt.isPresent()) {
+			CategoryDto dto = convertToCategoryDto(categoryOpt.get());
+			return ResponseEntity.ok(Map.of("exists", true, "category", dto));
+		} else {
+			return ResponseEntity.ok(Map.of("exists", false, "message", "Category does not exist. You can proceed."));
+		}
 	}
 
+	@PutMapping(value = "/categories/{id}/edit", consumes = { "multipart/form-data" })
+	public ResponseEntity<CategoryDto> editCategory(@PathVariable("id") Long id,
+			@RequestParam(value = "name", required = false) String name,
+			@RequestParam(value = "description", required = false) String description,
+			@RequestParam(value = "imagesToReplace", required = false) List<MultipartFile> imagesToReplace,
+			@RequestParam(value = "fileIdsToReplace", required = false) List<String> fileIdsToReplace)
+			throws Exception {
 
-	@PutMapping(value = "/categories/{id}/edit", consumes = {"multipart/form-data"})
-	public ResponseEntity<CategoryDto> editCategory(
-	        @PathVariable("id") Long id,
-	        @RequestParam(value = "name", required = false) String name,
-	        @RequestParam(value = "description", required = false) String description,
-	        @RequestParam(value = "imagesToReplace", required = false) List<MultipartFile> imagesToReplace,
-	        @RequestParam(value = "fileIdsToReplace", required = false) List<String> fileIdsToReplace
-	) throws Exception {
-
-	    Category updated = categoryService.editCategory(id, name, description, imagesToReplace, fileIdsToReplace);
-	    return ResponseEntity.ok(convertToCategoryDto(updated));
+		Category updated = categoryService.editCategory(id, name, description, imagesToReplace, fileIdsToReplace);
+		return ResponseEntity.ok(convertToCategoryDto(updated));
 	}
-
 
 	@GetMapping("/categories/id")
 	public ResponseEntity<?> getCategoryIdByName(@RequestParam("name") String name) {
-	    Optional<Category> categoryOpt = categoryRepository.findByNameIgnoreCase(name.trim());
+		Optional<Category> categoryOpt = categoryRepository.findByNameIgnoreCase(name.trim());
 
-	    if (categoryOpt.isPresent()) {
-	        return ResponseEntity.ok(categoryOpt.get().getId());
-	    } else {
-	        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Category not found");
-	    }
+		if (categoryOpt.isPresent()) {
+			return ResponseEntity.ok(categoryOpt.get().getId());
+		} else {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Category not found");
+		}
 	}
-
-
-
 
 }

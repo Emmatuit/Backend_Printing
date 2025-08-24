@@ -3,6 +3,7 @@ package com.example.demo.Dto;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 
@@ -19,9 +20,8 @@ public class OrderItemDto {
 
 	private LocalDateTime createdAt;
 
-
-
-
+	private List<SelectedSpecificationDto> selectedSpecifications;
+	private DesignRequestDto designRequest;
 
 	public OrderItemDto() {
 		this.price = BigDecimal.ZERO;
@@ -84,6 +84,22 @@ public class OrderItemDto {
 
 	public void setSubTotal(BigDecimal subTotal) {
 		this.subTotal = subTotal;
+	}
+
+	public List<SelectedSpecificationDto> getSelectedSpecifications() {
+		return selectedSpecifications;
+	}
+
+	public void setSelectedSpecifications(List<SelectedSpecificationDto> selectedSpecifications) {
+		this.selectedSpecifications = selectedSpecifications;
+	}
+
+	public DesignRequestDto getDesignRequest() {
+		return designRequest;
+	}
+
+	public void setDesignRequest(DesignRequestDto designRequest) {
+		this.designRequest = designRequest;
 	}
 
 }

@@ -23,6 +23,6 @@ public interface SubcategoryRepository extends JpaRepository<Subcategory, Long> 
 
 	Optional<Subcategory> findByNameIgnoreCaseAndCategoryId(String name, Long categoryId);
 
-	 Optional<Subcategory> findByName(String name);
+	Optional<Subcategory> findByName(String name);
 
 }

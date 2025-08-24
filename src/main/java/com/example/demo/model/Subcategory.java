@@ -24,10 +24,8 @@ public class Subcategory {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-
 	@Column(unique = true)
 	private String name;
-
 
 	@ManyToOne
 	@JoinColumn(name = "category_id")
@@ -35,8 +33,6 @@ public class Subcategory {
 
 	@OneToMany(mappedBy = "subcategory", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
 	private List<Product> products = new ArrayList<>();
-
-
 
 	public Subcategory() {
 		super();

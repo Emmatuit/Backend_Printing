@@ -5,64 +5,120 @@ import lombok.Data;
 @Data
 public class WebhookPayload {
 
-    @Data
-    public static class DataPayload {
-        private Long id;
-        private String txRef;
-        private String status;
-        private Double amount; // Or BigDecimal
-        private String createdAt; // ISO 8601
-        private String paymentType; // ✅ Add this!
+	@Data
+	public static class DataPayload {
+		private Long id;
+		private String txRef;
+		private String status;
+		private Double amount; // Or BigDecimal
+		private String createdAt; // ISO 8601
+		private String paymentType; // ✅ Add this!
 
-        private Card card; // ✅ If paymentType == "card"
+		private Card card; // ✅ If paymentType == "card"
 
-        // --- Card inner class ---
-        @Data
-        public static class Card {
-            private String type;
-            private String last4digits;
-            private String issuer;
+		// --- Card inner class ---
+		@Data
+		public static class Card {
+			private String type;
+			private String last4digits;
+			private String issuer;
 
-            public String getType() { return type; }
-            public void setType(String type) { this.type = type; }
+			public String getType() {
+				return type;
+			}
 
-            public String getLast4digits() { return last4digits; }
-            public void setLast4digits(String last4digits) { this.last4digits = last4digits; }
+			public void setType(String type) {
+				this.type = type;
+			}
 
-            public String getIssuer() { return issuer; }
-            public void setIssuer(String issuer) { this.issuer = issuer; }
-        }
+			public String getLast4digits() {
+				return last4digits;
+			}
 
-        public Long getId() { return id; }
-        public void setId(Long id) { this.id = id; }
+			public void setLast4digits(String last4digits) {
+				this.last4digits = last4digits;
+			}
 
-        public String getTxRef() { return txRef; }
-        public void setTxRef(String txRef) { this.txRef = txRef; }
+			public String getIssuer() {
+				return issuer;
+			}
 
-        public String getStatus() { return status; }
-        public void setStatus(String status) { this.status = status; }
+			public void setIssuer(String issuer) {
+				this.issuer = issuer;
+			}
+		}
 
-        public Double getAmount() { return amount; }
-        public void setAmount(Double amount) { this.amount = amount; }
+		public Long getId() {
+			return id;
+		}
 
-        public String getCreatedAt() { return createdAt; }
-        public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }
+		public void setId(Long id) {
+			this.id = id;
+		}
 
-        public String getPaymentType() { return paymentType; }
-        public void setPaymentType(String paymentType) { this.paymentType = paymentType; }
+		public String getTxRef() {
+			return txRef;
+		}
 
-        public Card getCard() { return card; }
-        public void setCard(Card card) { this.card = card; }
-    }
+		public void setTxRef(String txRef) {
+			this.txRef = txRef;
+		}
 
-    private DataPayload data;
+		public String getStatus() {
+			return status;
+		}
 
-    public WebhookPayload() {}
+		public void setStatus(String status) {
+			this.status = status;
+		}
 
-    public WebhookPayload(DataPayload data) {
-        this.data = data;
-    }
+		public Double getAmount() {
+			return amount;
+		}
 
-    public DataPayload getData() { return data; }
-    public void setData(DataPayload data) { this.data = data; }
+		public void setAmount(Double amount) {
+			this.amount = amount;
+		}
+
+		public String getCreatedAt() {
+			return createdAt;
+		}
+
+		public void setCreatedAt(String createdAt) {
+			this.createdAt = createdAt;
+		}
+
+		public String getPaymentType() {
+			return paymentType;
+		}
+
+		public void setPaymentType(String paymentType) {
+			this.paymentType = paymentType;
+		}
+
+		public Card getCard() {
+			return card;
+		}
+
+		public void setCard(Card card) {
+			this.card = card;
+		}
+	}
+
+	private DataPayload data;
+
+	public WebhookPayload() {
+	}
+
+	public WebhookPayload(DataPayload data) {
+		this.data = data;
+	}
+
+	public DataPayload getData() {
+		return data;
+	}
+
+	public void setData(DataPayload data) {
+		this.data = data;
+	}
 }

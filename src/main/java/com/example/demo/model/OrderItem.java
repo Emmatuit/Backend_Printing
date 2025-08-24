@@ -3,7 +3,10 @@ package com.example.demo.model;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -12,6 +15,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 
@@ -42,7 +47,12 @@ public class OrderItem {
 	@Column(nullable = false, updatable = false)
 	private LocalDateTime createdAt = LocalDateTime.now();
 
+	@OneToOne(cascade = CascadeType.ALL)
+	@JoinColumn(name = "design_request_id", referencedColumnName = "id")
+	private DesignRequest designRequest;
 
+	@OneToMany(mappedBy = "orderItem", cascade = CascadeType.ALL, orphanRemoval = true)
+	private List<SelectedSpecification> selectedSpecifications = new ArrayList<>();
 
 	public OrderItem() {
 	}
@@ -123,5 +133,20 @@ public class OrderItem {
 		this.subTotal = subTotal;
 	}
 
+	public List<SelectedSpecification> getSelectedSpecifications() {
+		return selectedSpecifications;
+	}
+
+	public void setSelectedSpecifications(List<SelectedSpecification> selectedSpecifications) {
+		this.selectedSpecifications = selectedSpecifications;
+	}
+
+	public DesignRequest getDesignRequest() {
+		return designRequest;
+	}
+
+	public void setDesignRequest(DesignRequest designRequest) {
+		this.designRequest = designRequest;
+	}
 
 }

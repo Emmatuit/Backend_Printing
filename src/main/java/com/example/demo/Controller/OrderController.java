@@ -35,210 +35,188 @@ import com.example.demo.model.UserEntity;
 @RequestMapping("/api")
 public class OrderController {
 
-    private static final Logger logger = LoggerFactory.getLogger(OrderController.class);
-private final CheckoutService checkoutService;
+	private static final Logger logger = LoggerFactory.getLogger(OrderController.class);
+	private final CheckoutService checkoutService;
 
 	private final UserRepository userRepository;
 
 	private final OrderRepository orderRepository;
 
-	public OrderController(CheckoutService checkoutService, UserRepository userRepository, OrderRepository orderRepository) {
+	public OrderController(CheckoutService checkoutService, UserRepository userRepository,
+			OrderRepository orderRepository) {
 		this.checkoutService = checkoutService;
 		this.userRepository = userRepository;
 		this.orderRepository = orderRepository;
 	}
 
 	@PostMapping("/checkout")
-	public ResponseEntity<?> checkout(
-	        @AuthenticationPrincipal UserDetails userDetails,
-	        @RequestBody CheckoutRequest request) {
+	public ResponseEntity<?> checkout(@AuthenticationPrincipal UserDetails userDetails,
+			@RequestBody CheckoutRequest request) {
 
-	    if (userDetails == null) {
-	        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-	            .body(Map.of("error", "User not authenticated"));
-	    }
+		if (userDetails == null) {
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "User not authenticated"));
+		}
 
-	    String email = userDetails.getUsername();
+		String email = userDetails.getUsername();
 
-	    Optional<UserEntity> optionalUser = userRepository.findByEmail(email);
+		Optional<UserEntity> optionalUser = userRepository.findByEmail(email);
 
-	    if (optionalUser.isEmpty()) {
-	        return ResponseEntity.badRequest()
-	            .body(Map.of("error", "Email not found"));
-	    }
+		if (optionalUser.isEmpty()) {
+			return ResponseEntity.badRequest().body(Map.of("error", "Email not found"));
+		}
 
-	    // Pass UserEntity to checkout method
-	    OrderDto order = checkoutService.checkout(request, optionalUser.get());
-	    return ResponseEntity.ok(order);
+		// Pass UserEntity to checkout method
+		OrderDto order = checkoutService.checkout(request, optionalUser.get());
+		return ResponseEntity.ok(order);
 	}
 
 	@DeleteMapping("/ordersDelete/{orderNumber}")
-	 public ResponseEntity<?> deleteOrder(
-	         @AuthenticationPrincipal UserDetails userDetails,
-	         @PathVariable("orderNumber") String orderNumber) {
+	public ResponseEntity<?> deleteOrder(@AuthenticationPrincipal UserDetails userDetails,
+			@PathVariable("orderNumber") String orderNumber) {
 
-	     if (userDetails == null) {
-	         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-	             .body(Map.of("error", "User not authenticated"));
-	     }
+		if (userDetails == null) {
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "User not authenticated"));
+		}
 
-	     String email = userDetails.getUsername();
+		String email = userDetails.getUsername();
 
-	     Optional<UserEntity> optionalUser = userRepository.findByEmail(email);
+		Optional<UserEntity> optionalUser = userRepository.findByEmail(email);
 
-	     if (optionalUser.isEmpty()) {
-	         return ResponseEntity.badRequest()
-	             .body(Map.of("error", "Email not found"));
-	     }
+		if (optionalUser.isEmpty()) {
+			return ResponseEntity.badRequest().body(Map.of("error", "Email not found"));
+		}
 
-	     try {
-	         // 1️⃣ Find the order
-	         Order order = checkoutService.getOrderByOrderNumber(orderNumber);
+		try {
+			// 1️⃣ Find the order
+			Order order = checkoutService.getOrderByOrderNumber(orderNumber);
 
-	         // 2️⃣ Check ownership
-	         if (!order.getEmail().equalsIgnoreCase(optionalUser.get().getEmail())) {
-	             return ResponseEntity.status(HttpStatus.FORBIDDEN)
-	                 .body(Map.of("error", "You do not own this order"));
-	         }
+			// 2️⃣ Check ownership
+			if (!order.getEmail().equalsIgnoreCase(optionalUser.get().getEmail())) {
+				return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "You do not own this order"));
+			}
 
-	         // 4️⃣ Delete order
-	         checkoutService.deleteOrder(order);
+			// 4️⃣ Delete order
+			checkoutService.deleteOrder(order);
 
-	         return ResponseEntity.ok(Map.of("message", "Order deleted successfully"));
-	     } catch (Exception ex) {
-	         logger.error("Error deleting order", ex);
-	         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-	             .body(Map.of("error", "Error deleting order"));
-	     }
-	 }
-
+			return ResponseEntity.ok(Map.of("message", "Order deleted successfully"));
+		} catch (Exception ex) {
+			logger.error("Error deleting order", ex);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body(Map.of("error", "Error deleting order"));
+		}
+	}
 
 	@GetMapping("/orders/{orderId}")
 	public ResponseEntity<?> getOrderSummary(@PathVariable("orderId") Long orderId,
-	                                         @AuthenticationPrincipal UserDetails userDetails) {
-	    if (userDetails == null) {
-	        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-	            .body(Map.of("error", "User not authenticated"));
-	    }
+			@AuthenticationPrincipal UserDetails userDetails) {
+		if (userDetails == null) {
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "User not authenticated"));
+		}
 
-	    String email = userDetails.getUsername();
-	    Optional<UserEntity> optionalUser = userRepository.findByEmail(email);
+		String email = userDetails.getUsername();
+		Optional<UserEntity> optionalUser = userRepository.findByEmail(email);
 
-	    if (optionalUser.isEmpty()) {
-	        return ResponseEntity.badRequest()
-	            .body(Map.of("error", "User not found"));
-	    }
+		if (optionalUser.isEmpty()) {
+			return ResponseEntity.badRequest().body(Map.of("error", "User not found"));
+		}
 
-	    try {
-	        OrderDto orderDto = checkoutService.getOrderSummary(orderId, optionalUser.get());
-	        return ResponseEntity.ok(orderDto);
-	    } catch (NoSuchElementException e) {
-	        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-	            .body(Map.of("error", "Order not found or access denied"));
-	    }
+		try {
+			OrderDto orderDto = checkoutService.getOrderSummary(orderId, optionalUser.get());
+			return ResponseEntity.ok(orderDto);
+		} catch (NoSuchElementException e) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND)
+					.body(Map.of("error", "Order not found or access denied"));
+		}
 	}
 
-	 @GetMapping("/orders")
+	@GetMapping("/orders")
 	public ResponseEntity<?> getUserOrders(@AuthenticationPrincipal UserDetails userDetails) {
-	    if (userDetails == null) {
-	        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-	            .body(Map.of("error", "User not authenticated"));
-	    }
+		if (userDetails == null) {
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "User not authenticated"));
+		}
 
-	    String email = userDetails.getUsername();
-	    Optional<UserEntity> optionalUser = userRepository.findByEmail(email);
+		String email = userDetails.getUsername();
+		Optional<UserEntity> optionalUser = userRepository.findByEmail(email);
 
-	    if (optionalUser.isEmpty()) {
-	        return ResponseEntity.badRequest()
-	            .body(Map.of("error", "User not found"));
-	    }
+		if (optionalUser.isEmpty()) {
+			return ResponseEntity.badRequest().body(Map.of("error", "User not found"));
+		}
 
-	    List<Order> orders = orderRepository.findByUserOrderByCreatedAtDesc(optionalUser.get());
-	    List<OrderDto> orderDtos = orders.stream().map(this::mapToDto).toList();
+		List<Order> orders = orderRepository.findByUserOrderByCreatedAtDesc(optionalUser.get());
+		List<OrderDto> orderDtos = orders.stream().map(this::mapToDto).toList();
 
-	    return ResponseEntity.ok(orderDtos);
+		return ResponseEntity.ok(orderDtos);
 	}
 
+	private OrderDto mapToDto(Order order) {
+		OrderDto dto = new OrderDto();
+		dto.setOrderId(order.getId());
+		dto.setOrderNumber(order.getOrderNumber());
+		dto.setTotalAmount(order.getTotalAmount());
+		dto.setEmail(order.getEmail());
+		dto.setFullName(order.getFullName());
+		dto.setPhoneNumber(order.getPhoneNumber());
+		dto.setAddress1(order.getAddress1());
+		dto.setAddress2(order.getAddress2());
+		dto.setState(order.getState());
+		dto.setPostalCode(order.getPostalCode());
+		dto.setPaymentMethod(order.getPaymentMethod());
+		dto.setPaymentStatus(order.getPaymentStatus());
+		dto.setStatus(order.getStatus());
+		dto.setCreatedAt(order.getCreatedAt());
+		dto.setShippingMethod(order.getShippingMethod());
+		dto.setShippingAddress(order.getShippingAddress());
+		dto.setShippingFee(order.getShippingFee());
+		dto.setTaxAmount(order.getTaxAmount());
+		dto.setGrandTotal(order.getGrandTotal());
+		dto.setCouponCode(order.getCouponCode());
+		dto.setDiscountAmount(order.getDiscountAmount());
 
-	 private OrderDto mapToDto(Order order) {
-	        OrderDto dto = new OrderDto();
-	        dto.setOrderId(order.getId());
-	        dto.setOrderNumber(order.getOrderNumber());
-	        dto.setTotalAmount(order.getTotalAmount());
-	        dto.setEmail(order.getEmail());
-	        dto.setFullName(order.getFullName());
-	        dto.setPhoneNumber(order.getPhoneNumber());
-	        dto.setAddress1(order.getAddress1());
-	        dto.setAddress2(order.getAddress2());
-	        dto.setState(order.getState());
-	        dto.setPostalCode(order.getPostalCode());
-	        dto.setPaymentMethod(order.getPaymentMethod());
-	        dto.setPaymentStatus(order.getPaymentStatus());
-	        dto.setStatus(order.getStatus());
-	        dto.setCreatedAt(order.getCreatedAt());
-	        dto.setShippingMethod(order.getShippingMethod());
-	        dto.setShippingAddress(order.getShippingAddress());
-	        dto.setShippingFee(order.getShippingFee());
-	        dto.setTaxAmount(order.getTaxAmount());
-	        dto.setGrandTotal(order.getGrandTotal());
-	        dto.setCouponCode(order.getCouponCode());
-	        dto.setDiscountAmount(order.getDiscountAmount());
+		List<OrderItemDto> items = order.getItems().stream().map(item -> {
+			OrderItemDto itemDto = new OrderItemDto();
+			itemDto.setProductId(item.getProduct().getId());
+			itemDto.setProductName(item.getProduct().getName());
+			itemDto.setQuantity(item.getQuantity());
+			itemDto.setPrice(item.getPrice());
+			itemDto.setSubTotal(item.getSubTotal());
+			itemDto.setCreatedAt(item.getCreatedAt());
+			return itemDto;
+		}).collect(Collectors.toList());
 
+		dto.setItems(items);
+		return dto;
+	}
 
-	        List<OrderItemDto> items = order.getItems().stream().map(item -> {
-	            OrderItemDto itemDto = new OrderItemDto();
-	            itemDto.setProductId(item.getProduct().getId());
-	            itemDto.setProductName(item.getProduct().getName());
-	            itemDto.setQuantity(item.getQuantity());
-	            itemDto.setPrice(item.getPrice());
-	            itemDto.setSubTotal(item.getSubTotal());
-	            itemDto.setCreatedAt(item.getCreatedAt());
-	            return itemDto;
-	        }).collect(Collectors.toList());
+	@GetMapping("/orders/status")
+	public ResponseEntity<?> getOrdersByOptionalStatus(@RequestParam(value = "status", required = false) String status,
+			@AuthenticationPrincipal UserDetails userDetails) {
 
-	        dto.setItems(items);
-	        return dto;
-	    }
+		if (userDetails == null) {
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "User not authenticated"));
+		}
 
-	 @GetMapping("/orders/status")
-	 public ResponseEntity<?> getOrdersByOptionalStatus(
-	         @RequestParam(value = "status", required = false) String status,
-	         @AuthenticationPrincipal UserDetails userDetails) {
+		String email = userDetails.getUsername();
+		Optional<UserEntity> optionalUser = userRepository.findByEmail(email);
 
-	     if (userDetails == null) {
-	         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-	             .body(Map.of("error", "User not authenticated"));
-	     }
+		if (optionalUser.isEmpty()) {
+			return ResponseEntity.badRequest().body(Map.of("error", "User not found"));
+		}
 
-	     String email = userDetails.getUsername();
-	     Optional<UserEntity> optionalUser = userRepository.findByEmail(email);
+		List<Order> orders;
 
-	     if (optionalUser.isEmpty()) {
-	         return ResponseEntity.badRequest()
-	             .body(Map.of("error", "User not found"));
-	     }
+		if (status != null && !status.isBlank()) {
+			try {
+				OrderStatus orderStatus = OrderStatus.valueOf(status.toUpperCase());
+				orders = orderRepository.findByUserAndStatusOrderByCreatedAtDesc(optionalUser.get(), orderStatus);
+			} catch (IllegalArgumentException e) {
+				return ResponseEntity.badRequest().body(Map.of("error", "Invalid order status: " + status));
+			}
+		} else {
+			orders = orderRepository.findByUserOrderByCreatedAtDesc(optionalUser.get());
+		}
 
-	     List<Order> orders;
-
-	     if (status != null && !status.isBlank()) {
-	         try {
-	             OrderStatus orderStatus = OrderStatus.valueOf(status.toUpperCase());
-	             orders = orderRepository.findByUserAndStatusOrderByCreatedAtDesc(
-	                     optionalUser.get(), orderStatus);
-	         } catch (IllegalArgumentException e) {
-	             return ResponseEntity.badRequest()
-	                 .body(Map.of("error", "Invalid order status: " + status));
-	         }
-	     } else {
-	         orders = orderRepository.findByUserOrderByCreatedAtDesc(optionalUser.get());
-	     }
-
-	     List<OrderDto> orderDtos = orders.stream().map(this::mapToDto).toList();
-	     return ResponseEntity.ok(orderDtos);
-	 }
-
-
-
-
+		List<OrderDto> orderDtos = orders.stream().map(this::mapToDto).toList();
+		return ResponseEntity.ok(orderDtos);
+	}
 
 }

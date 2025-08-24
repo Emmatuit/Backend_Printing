@@ -1,6 +1,5 @@
 package com.example.demo.model;
 
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -17,35 +16,33 @@ import jakarta.persistence.Table;
 @Table(name = "coupons")
 public class Coupon {
 
-    public enum DiscountType {
-        PERCENTAGE,
-        FIXED_AMOUNT
-    }
+	public enum DiscountType {
+		PERCENTAGE, FIXED_AMOUNT
+	}
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
 
-    @Column(unique = true, nullable = false)
-    private String code;
+	@Column(unique = true, nullable = false)
+	private String code;
 
-    @Enumerated(EnumType.STRING)
-    private DiscountType discountType;  // PERCENTAGE or FIXED_AMOUNT
+	@Enumerated(EnumType.STRING)
+	private DiscountType discountType; // PERCENTAGE or FIXED_AMOUNT
 
-    private BigDecimal discountValue;
+	private BigDecimal discountValue;
 
-    private BigDecimal minPurchaseAmount;
+	private BigDecimal minPurchaseAmount;
 
-    private LocalDateTime expiryDate;
+	private LocalDateTime expiryDate;
 
-    private boolean active;
+	private boolean active;
 
-    private Integer usageLimit;   // max times coupon can be used
+	private Integer usageLimit; // max times coupon can be used
 
-    private Integer timesUsed = 0; // track usage count
+	private Integer timesUsed = 0; // track usage count
 
-
-    public Coupon(Long id, String code, DiscountType discountType, BigDecimal discountValue,
+	public Coupon(Long id, String code, DiscountType discountType, BigDecimal discountValue,
 			BigDecimal minPurchaseAmount, LocalDateTime expiryDate, boolean active, Integer usageLimit,
 			Integer timesUsed) {
 		super();
@@ -62,7 +59,7 @@ public class Coupon {
 
 	// Constructors, getters and setters...
 
-    public String getCode() {
+	public String getCode() {
 		return code;
 	}
 
@@ -99,10 +96,10 @@ public class Coupon {
 	}
 
 	// Optional helper method
-    public boolean isValid() {
-        return active && (expiryDate == null || expiryDate.isAfter(LocalDateTime.now()))
-               && (usageLimit == null || timesUsed < usageLimit);
-    }
+	public boolean isValid() {
+		return active && (expiryDate == null || expiryDate.isAfter(LocalDateTime.now()))
+				&& (usageLimit == null || timesUsed < usageLimit);
+	}
 
 	public void setActive(boolean active) {
 		this.active = active;
@@ -139,6 +136,5 @@ public class Coupon {
 	public void setUsageLimit(Integer usageLimit) {
 		this.usageLimit = usageLimit;
 	}
-
 
 }
